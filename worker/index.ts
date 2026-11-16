@@ -71,7 +71,48 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
    await audit(e,(current as any).id,"cliente_criado","clientes");return json({id,nome,telefone,email,observacoes},201,h)
   }catch(error){console.error("cliente_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível cadastrar o cliente."},500,h)}
  }
- if(r.method==="GET"&&u.pathname==="/api/veiculos"){
+ if(r.method==="GET"&&/^\/api\/clientes\/[^/]+$/.test(u.pathname)){
+  const id=u.pathname.split("/").pop()??"";
+  const client=await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos,(SELECT MAX(a.data_hora) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') ultima_visita FROM clientes c WHERE c.id=?").bind(id).first<any>();
+  if(!client)return json({error:"Cliente não encontrado."},404,h);
+  const [vehicles,history]=await Promise.all([
+   e.DB.prepare("SELECT id,marca,modelo,ano,placa,cor,observacoes FROM veiculos WHERE cliente_id=? ORDER BY criado_em DESC").bind(id).all<any>(),
+   e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.valor_centavos,a.desconto_centavos,a.acrescimo_centavos,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='pendente'),0) pendente_centavos FROM atendimentos a LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.cliente_id=? ORDER BY a.data_hora DESC LIMIT 100").bind(id).all<any>()
+  ]);
+  return json({cliente:client,veiculos:vehicles.results??[],historico:history.results??[]},200,h)
+ }
+  if(r.method==="GET"&&u.pathname==="/api/financeiro"){
+  const [payments,open]=await Promise.all([
+   e.DB.prepare("SELECT p.id,p.atendimento_id,p.valor_centavos,p.metodo,p.status,p.recebido_em,p.criado_em,c.nome cliente,COALESCE(v.modelo,'') veiculo,a.data_hora FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY CASE p.status WHEN 'pendente' THEN 0 ELSE 1 END,p.criado_em DESC LIMIT 150").all<any>(),
+   e.DB.prepare("SELECT a.id,a.data_hora,a.valor_centavos,c.nome cliente,COALESCE(v.modelo,'') veiculo,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,MAX(0,a.valor_centavos-COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0)) saldo_centavos FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.status<>'cancelado' AND a.valor_centavos>COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) ORDER BY a.data_hora DESC LIMIT 100").all<any>()
+  ]);
+  const totals=await e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN status='recebido' THEN valor_centavos ELSE 0 END),0) recebido_centavos,COALESCE(SUM(CASE WHEN status='pendente' THEN valor_centavos ELSE 0 END),0) pendente_centavos,COUNT(CASE WHEN status='recebido' THEN 1 END) recebidos,COUNT(CASE WHEN status='pendente' THEN 1 END) pendentes FROM pagamentos").first<any>();
+  return json({pagamentos:payments.results??[],em_aberto:open.results??[],totais:totals},200,h)
+ }
+ if(r.method==="POST"&&u.pathname==="/api/pagamentos"){
+  try{const b=await body(r),atendimentoId=String(b.atendimento_id??""),valor=Math.round(Number(b.valor_reais??0)*100),metodo=String(b.metodo??"");
+   if(!atendimentoId||!Number.isSafeInteger(valor)||valor<=0||valor>100000000||!["dinheiro","pix","cartao","outro"].includes(metodo))return json({error:"Informe atendimento, valor válido e forma de pagamento."},400,h);
+   const at=await e.DB.prepare("SELECT a.id,a.valor_centavos,a.status,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido FROM atendimentos a WHERE a.id=?").bind(atendimentoId).first<any>();
+   if(!at||at.status==="cancelado")return json({error:"Atendimento não encontrado ou cancelado."},404,h);
+   const saldo=Math.max(0,Number(at.valor_centavos)-Number(at.recebido));if(valor>saldo)return json({error:"O valor informado é maior que o saldo em aberto."},400,h);
+   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO pagamentos(id,atendimento_id,valor_centavos,metodo,status,criado_por) VALUES(?,?,?,?,'pendente',?)").bind(id,atendimentoId,valor,metodo,(current as any).id).run();
+   await audit(e,(current as any).id,"pagamento_pendente_criado","pagamentos");return json({id,status:"pendente"},201,h)
+  }catch(error){console.error("payment_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível registrar o pagamento."},500,h)}
+ }
+ if(r.method==="PATCH"&&/^\/api\/pagamentos\/[^/]+$/.test(u.pathname)){
+  try{const id=u.pathname.split("/").pop()??"",payment=await e.DB.prepare("SELECT p.id,p.atendimento_id,p.valor_centavos,p.metodo,p.status,c.nome cliente FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id JOIN clientes c ON c.id=a.cliente_id WHERE p.id=?").bind(id).first<any>();
+   if(!payment)return json({error:"Pagamento não encontrado."},404,h);if(payment.status!=="pendente")return json({error:"Este pagamento não está pendente."},409,h);
+   const movementId=crypto.randomUUID();
+   await e.DB.batch([
+    e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?, 'entrada','pagamento',?,?,?, ?,? WHERE EXISTS(SELECT 1 FROM pagamentos WHERE id=? AND status='pendente')").bind(movementId,id,"Pagamento confirmado · "+payment.cliente,Number(payment.valor_centavos),payment.metodo,(current as any).id,id),
+    e.DB.prepare("UPDATE pagamentos SET status='recebido',recebido_em=datetime('now','-3 hours'),movimento_id=? WHERE id=? AND status='pendente' AND EXISTS(SELECT 1 FROM movimentacoes WHERE id=?)").bind(movementId,id,movementId)
+   ]);
+   const confirmed=await e.DB.prepare("SELECT status,recebido_em,movimento_id FROM pagamentos WHERE id=?").bind(id).first<any>();
+   if(confirmed?.status!=="recebido")return json({error:"Não foi possível confirmar este pagamento."},409,h);
+   await audit(e,(current as any).id,"pagamento_confirmado","pagamentos");return json({status:confirmed.status,recebido_em:confirmed.recebido_em},200,h)
+  }catch(error){console.error("payment_confirm_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível confirmar o pagamento. Verifique se ele já foi confirmado."},409,h)}
+ }
+  if(r.method==="GET"&&u.pathname==="/api/veiculos"){
   const clienteId=(u.searchParams.get("cliente_id")??"").trim();
   const rows=await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id WHERE (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId,clienteId).all<any>();
   return json({veiculos:rows.results??[]},200,h)
