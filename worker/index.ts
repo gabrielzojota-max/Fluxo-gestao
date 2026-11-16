@@ -76,7 +76,7 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
   const client=await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos,(SELECT MAX(a.data_hora) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') ultima_visita FROM clientes c WHERE c.id=?").bind(id).first<any>();
   if(!client)return json({error:"Cliente não encontrado."},404,h);
   const [vehicles,history]=await Promise.all([
-   e.DB.prepare("SELECT id,marca,modelo,ano,placa,cor,observacoes FROM veiculos WHERE cliente_id=? ORDER BY criado_em DESC").bind(id).all<any>(),
+   e.DB.prepare("SELECT id,marca,modelo,ano,placa,cor,observacoes,foto_data FROM veiculos WHERE cliente_id=? ORDER BY criado_em DESC").bind(id).all<any>(),
    e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.valor_centavos,a.desconto_centavos,a.acrescimo_centavos,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='pendente'),0) pendente_centavos FROM atendimentos a LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.cliente_id=? ORDER BY a.data_hora DESC LIMIT 100").bind(id).all<any>()
   ]);
   return json({cliente:client,veiculos:vehicles.results??[],historico:history.results??[]},200,h)
@@ -114,14 +114,18 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
  }
   if(r.method==="GET"&&u.pathname==="/api/veiculos"){
   const clienteId=(u.searchParams.get("cliente_id")??"").trim();
-  const rows=await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id WHERE (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId,clienteId).all<any>();
+  const rows=await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,v.foto_data,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id WHERE (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId,clienteId).all<any>();
   return json({veiculos:rows.results??[]},200,h)
+ }
+ if(r.method==="PATCH"&&/^\\/api\\/veiculos\\/[^/]+$/.test(u.pathname)){
+  try{const id=u.pathname.split("/").pop()??"",b=await body(r),fotoData=String(b.foto_data??"");if(!fotoData||fotoData.length>480000||!/^data:image\\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(fotoData))return json({error:"Envie uma foto JPG, PNG ou WebP com tamanho reduzido."},400,h);const result=await e.DB.prepare("UPDATE veiculos SET foto_data=? WHERE id=?").bind(fotoData,id).run();if(!result.meta.changes)return json({error:"Veículo não encontrado."},404,h);await audit(e,(current as any).id,"foto_veiculo_atualizada","veiculos");return json({status:"updated"},200,h)}catch(error){console.error("vehicle_photo_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível salvar a foto do veículo."},500,h)}
  }
  if(r.method==="POST"&&u.pathname==="/api/veiculos"){
   try{const b=await body(r),clienteId=String(b.cliente_id??""),modelo=String(b.modelo??"").trim(),placa=String(b.placa??"").trim().toUpperCase(),cor=String(b.cor??"").trim(),ano=b.ano==null||b.ano===""?null:Number(b.ano);
    if(!clienteId||modelo.length<2||modelo.length>100||placa.length>12||cor.length>40||(ano!==null&&(!Number.isInteger(ano)||ano<1950||ano>2100)))return json({error:"Informe cliente e modelo; placa, ano e cor são opcionais."},400,h);
    const client=await e.DB.prepare("SELECT id FROM clientes WHERE id=?").bind(clienteId).first<any>();if(!client)return json({error:"Cliente não encontrado."},404,h);
-   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO veiculos(id,cliente_id,modelo,placa,ano,cor) VALUES(?,?,?,?,?,?)").bind(id,clienteId,modelo,placa||null,ano,cor||null).run();
+   const fotoData=String(b.foto_data??"");if(fotoData&&(fotoData.length>480000||!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(fotoData)))return json({error:"A foto precisa ser JPG, PNG ou WebP e ter tamanho reduzido."},400,h);
+   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO veiculos(id,cliente_id,modelo,placa,ano,cor,foto_data) VALUES(?,?,?,?,?,?,?)").bind(id,clienteId,modelo,placa||null,ano,cor||null,fotoData||null).run();
    await audit(e,(current as any).id,"veiculo_criado","veiculos");return json({id,cliente_id:clienteId,modelo,placa,ano,cor},201,h)
   }catch(error){console.error("veiculo_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível cadastrar o veículo."},500,h)}
  }
