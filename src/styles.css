@@ -263,3 +263,9 @@ section{padding:42px clamp(20px,3vw,48px)}
 @media(max-width:700px){.auth-screen{padding:18px 13px calc(18px + env(safe-area-inset-bottom));align-items:start}.auth-layout{gap:12px}.auth-showcase .brand{padding:7px 5px 8px}.auth-showcase .brand-symbol{width:43px;height:43px}.auth-card{padding:24px 19px;border-radius:15px}.auth-intro h1{font-size:25px}.welcome-panel{padding:18px 16px;align-items:flex-start;flex-direction:column}.welcome-panel h2{font-size:23px}.welcome-date{font-size:10px}.dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-stats article{padding:12px}.dashboard-stats article strong{font-size:19px}.today-list{padding:14px}.appointment-tools{align-items:flex-start}.appointment-tools .appointment-filters{width:100%}.appointment-tools .appointment-filters button{min-height:43px}.today-count{font-size:10px}.expense-row{align-items:flex-start}.expense-value{align-items:flex-start}.expense-value strong{font-size:13px}.expense-value .confirm-payment{white-space:normal}.auth-points{display:none}}
 
 .expense-method{max-width:120px;min-height:34px;padding:6px 8px;border:1px solid #354a39;border-radius:8px;background:#0e1710;color:#dce9dd;font-size:10px}@media(max-width:700px){.expense-method{max-width:100%;width:100%;min-height:40px;font-size:13px}}
+
+
+/* Modal de detalhes: mantém o cartão fixo e rola apenas seu conteúdo. */
+.modal-backdrop{position:fixed;inset:0;z-index:100;display:grid;place-items:center;overflow:hidden;padding:16px;overscroll-behavior:contain;touch-action:none}
+.detail-modal{position:relative;width:min(560px,calc(100vw - 32px));max-height:min(82dvh,760px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;scrollbar-gutter:stable}
+@media(max-width:700px){.modal-backdrop{align-items:center;padding:14px}.detail-modal{width:100%;max-height: min(82dvh,720px);padding:17px;border-radius:16px}}
