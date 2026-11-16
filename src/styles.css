@@ -1177,3 +1177,51 @@ section{max-width:1600px;padding:38px clamp(22px,3.6vw,56px) 64px}
   .history-row b{font-size:10px}
   .history-value strong{font-size:11px}
 }
+
+
+/* FLUXO · Refinamento financeiro */
+.finance-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:4px 2px 5px}
+.finance-toolbar h2{margin:5px 0 0;font:800 25px Manrope;color:#edf5ec;letter-spacing:-.7px}
+.finance-toolbar p{margin:6px 0 0;color:#91a093;font-size:12px;line-height:1.5}
+.finance-refresh{min-height:42px;padding:10px 14px;font-size:11px}
+.finance-summary{grid-template-columns:repeat(5,minmax(0,1fr));gap:11px}
+.finance-summary article{min-width:0;padding:17px 16px;position:relative;overflow:hidden}
+.finance-summary article:after{content:"";position:absolute;width:82px;height:82px;border-radius:50%;right:-36px;bottom:-44px;background:rgba(184,233,135,.055);pointer-events:none}
+.finance-summary article>strong{font-size:clamp(17px,1.7vw,23px);overflow-wrap:anywhere}
+.finance-summary article>span{display:block;line-height:1.45;min-height:28px}
+.finance-summary .finance-expense-pending article>div svg{color:#e5bd73}
+.finance-summary .finance-expense-paid>div svg{color:#a7d878}
+.finance-list-head{align-items:flex-start;gap:14px;flex-wrap:wrap}
+.finance-filters{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.finance-filters button{min-height:34px;padding:7px 11px;border:1px solid #34483a;border-radius:8px;background:#111b14;color:#a8b7aa;font:600 10px 'DM Sans',sans-serif;cursor:pointer}
+.finance-filters button.active{border-color:#789b59;background:#263b29;color:#d6f3b1}
+.finance-open,.payment-history{padding:19px}
+.finance-open .list-head,.payment-history .list-head{padding-bottom:10px}
+.finance-due:first-child,.payment-row:first-child{border-top:1px solid #293a2d}
+.expense-heading{display:flex;align-items:flex-end;justify-content:space-between}
+.expense-heading h2{font-size:20px;letter-spacing:-.3px}
+.expense-grid>.form-card,.expense-grid>.list-card{border-color:#2b3d30}
+.expense-grid .form-card{padding:20px}
+.expense-grid .data-form{gap:9px}
+.expense-grid .data-form input,.expense-grid .data-form select{min-height:43px}
+@media(max-width:1050px){.finance-summary{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){
+ .finance-toolbar{align-items:stretch;flex-direction:column;gap:12px}
+ .finance-toolbar h2{font-size:22px}
+ .finance-refresh{width:100%;justify-content:center;min-height:45px}
+ .finance-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .finance-summary article{padding:14px 13px;border-radius:12px}
+ .finance-summary article>strong{font-size:19px;margin:10px 0 4px}
+ .finance-summary article>span{font-size:9px;min-height:0}
+ .finance-list-head{display:grid;grid-template-columns:1fr}
+ .finance-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+ .finance-filters button{min-height:40px;padding:7px 5px}
+ .finance-open,.payment-history{padding:15px}
+ .finance-due,.payment-row{padding:14px 0}
+ .due-action,.payment-state{width:100%;align-items:flex-start}
+ .due-action .secondary-action,.payment-state .confirm-payment{width:100%;min-height:42px;white-space:normal}
+ .payment-form{padding:12px}
+ .expense-section{padding-top:4px}
+ .expense-heading h2{font-size:19px}
+ .expense-grid .form-card{padding:16px}
+}
