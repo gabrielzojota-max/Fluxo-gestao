@@ -45,6 +45,68 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
    await audit(e,account.id,"login","sessao");return json({user:{id:account.id,nome:account.nome,email:account.email,papel:account.papel}},200,{...Object.fromEntries(h),"Set-Cookie":cookie(token,TTL)})
   }catch(error){console.error("auth_login_error",{name:error instanceof Error?error.name:"UnknownError",message:error instanceof Error?error.message:"Unknown error"});return json({error:"Não foi possível realizar o login",reference:"auth_login_error"},500,h)}
  }
+
+ const current=await userFrom(r,e);
+ if(u.pathname.startsWith("/api/")&&u.pathname!=="/api/health"&&u.pathname!=="/api/auth/me"&&u.pathname!=="/api/auth/login-info"&&u.pathname.startsWith("/api/")&&!u.pathname.startsWith("/api/auth/")&&!current)return json({error:"Sessão expirada. Entre novamente."},401,h);
+ if(r.method==="GET"&&u.pathname==="/api/dashboard"){
+  const [clients,appointments,today,revenue,openAppointments,services]=await Promise.all([
+   e.DB.prepare("SELECT COUNT(*) total FROM clientes").first<any>(),
+   e.DB.prepare("SELECT COUNT(*) total FROM atendimentos").first<any>(),
+   e.DB.prepare("SELECT COUNT(*) total FROM atendimentos WHERE substr(data_hora,1,10)=date('now','-3 hours') AND status<>'cancelado'").first<any>(),
+   e.DB.prepare("SELECT COALESCE(SUM(valor_centavos),0) total FROM pagamentos WHERE status='recebido' AND substr(COALESCE(recebido_em,criado_em),1,7)=strftime('%Y-%m','now','-3 hours')").first<any>(),
+   e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.valor_centavos,c.nome cliente,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.status IN('agendado','em_andamento') ORDER BY a.data_hora LIMIT 6").all<any>(),
+   e.DB.prepare("SELECT COUNT(*) total FROM catalogo_servicos WHERE ativo=1").first<any>()
+  ]);
+  return json({clientes:clients?.total??0,atendimentos:appointments?.total??0,hoje:today?.total??0,faturamento_centavos:revenue?.total??0,servicos:services?.total??0,proximos:openAppointments.results??[]},200,h)
+ }
+ if(r.method==="GET"&&u.pathname==="/api/clientes"){
+  const q=(u.searchParams.get("q")??"").trim();
+  const rows=await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos FROM clientes c WHERE (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q,q,q).all<any>();
+  return json({clientes:rows.results??[]},200,h)
+ }
+ if(r.method==="POST"&&u.pathname==="/api/clientes"){
+  try{const b=await body(r),nome=String(b.nome??"").trim(),telefone=String(b.telefone??"").trim(),email=String(b.email??"").trim(),observacoes=String(b.observacoes??"").trim();
+   if(nome.length<2||nome.length>120||telefone.length>30||email.length>160||observacoes.length>1000)return json({error:"Confira os dados do cliente."},400,h);
+   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO clientes(id,nome,telefone,email,observacoes) VALUES(?,?,?,?,?)").bind(id,nome,telefone||null,email||null,observacoes||null).run();
+   await audit(e,(current as any).id,"cliente_criado","clientes");return json({id,nome,telefone,email,observacoes},201,h)
+  }catch(error){console.error("cliente_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível cadastrar o cliente."},500,h)}
+ }
+ if(r.method==="GET"&&u.pathname==="/api/servicos"){
+  const rows=await e.DB.prepare("SELECT id,nome,descricao,preco_sugerido_centavos FROM catalogo_servicos WHERE ativo=1 ORDER BY nome").all<any>();
+  return json({servicos:rows.results??[]},200,h)
+ }
+ if(r.method==="POST"&&u.pathname==="/api/servicos"){
+  try{const b=await body(r),nome=String(b.nome??"").trim(),descricao=String(b.descricao??"").trim(),preco=Math.round(Number(b.preco??0)*100);
+   if(nome.length<2||nome.length>100||descricao.length>500||!Number.isSafeInteger(preco)||preco<0||preco>100000000)return json({error:"Confira nome, descrição e preço do serviço."},400,h);
+   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO catalogo_servicos(id,nome,descricao,preco_sugerido_centavos) VALUES(?,?,?,?)").bind(id,nome,descricao||null,preco).run();
+   await audit(e,(current as any).id,"servico_criado","catalogo_servicos");return json({id,nome,descricao,preco_sugerido_centavos:preco},201,h)
+  }catch(error){console.error("servico_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível cadastrar o serviço."},500,h)}
+ }
+ if(r.method==="GET"&&u.pathname==="/api/atendimentos"){
+  const rows=await e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.valor_centavos,a.observacoes,c.nome cliente,c.telefone,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY a.data_hora DESC LIMIT 200").all<any>();
+  return json({atendimentos:rows.results??[]},200,h)
+ }
+ if(r.method==="POST"&&u.pathname==="/api/atendimentos"){
+  try{const b=await body(r),clienteId=String(b.cliente_id??""),servicoId=String(b.servico_id??""),dataHora=String(b.data_hora??""),observacoes=String(b.observacoes??"").trim(),modelo=String(b.modelo??"").trim(),placa=String(b.placa??"").trim();
+   if(!clienteId||!servicoId||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$/.test(dataHora)||observacoes.length>1000||modelo.length>80||placa.length>12)return json({error:"Preencha cliente, serviço e data/hora corretamente."},400,h);
+   const [client,service]=await Promise.all([e.DB.prepare("SELECT id FROM clientes WHERE id=?").bind(clienteId).first<any>(),e.DB.prepare("SELECT id,nome,preco_sugerido_centavos FROM catalogo_servicos WHERE id=? AND ativo=1").bind(servicoId).first<any>()]);
+   if(!client||!service)return json({error:"Cliente ou serviço não encontrado."},404,h);
+   let vehicleId:string|null=null;
+   if(modelo||placa){vehicleId=crypto.randomUUID();await e.DB.prepare("INSERT INTO veiculos(id,cliente_id,modelo,placa) VALUES(?,?,?,?)").bind(vehicleId,clienteId,modelo||null,placa||null).run()}
+   const id=crypto.randomUUID(),price=Number(service.preco_sugerido_centavos)||0;
+   await e.DB.batch([
+    e.DB.prepare("INSERT INTO atendimentos(id,cliente_id,veiculo_id,data_hora,status,valor_centavos,criado_por,observacoes) VALUES(?,?,?,?,'agendado',?,?,?)").bind(id,clienteId,vehicleId,dataHora,price,(current as any).id,observacoes||null),
+    e.DB.prepare("INSERT INTO atendimento_servicos(atendimento_id,servico_id,descricao,valor_centavos) VALUES(?,?,?,?)").bind(id,servicoId,service.nome,price)
+   ]);
+   await audit(e,(current as any).id,"atendimento_criado","atendimentos");return json({id},201,h)
+  }catch(error){console.error("atendimento_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível criar o atendimento."},500,h)}
+ }
+ if(r.method==="PATCH"&&u.pathname.startsWith("/api/atendimentos/")){
+  try{const id=u.pathname.split("/").pop()??"",b=await body(r),status=String(b.status??"");if(!["agendado","em_andamento","concluido","cancelado"].includes(status))return json({error:"Status inválido."},400,h);
+   const result=await e.DB.prepare("UPDATE atendimentos SET status=? WHERE id=?").bind(status,id).run();if(!result.meta.changes)return json({error:"Atendimento não encontrado."},404,h);
+   await audit(e,(current as any).id,"atendimento_status_alterado","atendimentos");return json({status},200,h)
+  }catch(error){console.error("atendimento_update_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível atualizar o atendimento."},500,h)}
+ }
  if(r.method==="GET"&&u.pathname==="/api/auth/me"){const x=await userFrom(r,e);return x?json({user:x},200,h):json({user:null},401,h)}
  if(r.method==="POST"&&u.pathname==="/api/auth/logout"){const t=getCookie(r);if(t)await e.DB.prepare("UPDATE sessoes SET revogada_em=datetime('now') WHERE token_hash=? AND revogada_em IS NULL").bind(await sha(t)).run();return json({status:"logged_out"},200,{...Object.fromEntries(h),"Set-Cookie":cookie("",0)})}
  return json({error:"Not found"},404,h)
