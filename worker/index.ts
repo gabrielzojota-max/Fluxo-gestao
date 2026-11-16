@@ -109,9 +109,32 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
    await audit(e,(current as any).id,"movimentacao_estoque_"+tipo,"movimentacoes_estoque");return json({id,status:"registrado"},201,h)
   }catch(error){console.error("stock_movement_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível registrar a movimentação."},500,h)}
  }
-  if(r.method==="GET"&&u.pathname==="/api/financeiro"){
+  if(r.method==="GET"&&u.pathname==="/api/despesas"){
+ const rows=await e.DB.prepare("SELECT id,categoria,descricao,valor_centavos,vencimento,status,metodo,pago_em,criado_em FROM despesas WHERE status<>'cancelada' ORDER BY CASE status WHEN 'pendente' THEN 0 ELSE 1 END,COALESCE(vencimento,criado_em) DESC LIMIT 300").all();
+ const totals=await e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN status='paga' THEN valor_centavos ELSE 0 END),0) pagas_centavos,COALESCE(SUM(CASE WHEN status='pendente' THEN valor_centavos ELSE 0 END),0) pendentes_centavos FROM despesas").first();
+ return json({despesas:rows.results??[],totais},200,h)
+ }
+ if(r.method==="POST"&&u.pathname==="/api/despesas"){
+ try{const b=await body(r),categoria=String(b.categoria??"outros"),descricao=String(b.descricao??"").trim(),valor=Math.round(Number(b.valor_reais??0)*100),vencimento=b.vencimento?String(b.vencimento):null;
+ if(!["produtos","aluguel","agua","energia","internet","manutencao","outros"].includes(categoria)||descricao.length<2||descricao.length>160||!Number.isSafeInteger(valor)||valor<=0||valor>100000000||(vencimento&&!/^\d{4}-\d{2}-\d{2}$/.test(vencimento)))return json({error:"Confira categoria, descrição, valor e vencimento."},400,h);
+ const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO despesas(id,descricao,valor_centavos,vencimento,status,categoria,criado_por) VALUES(?,?,?,?,'pendente',?,?)").bind(id,descricao,valor,vencimento,categoria,current.id).run();
+ await audit(e,current.id,"despesa_criada","despesas");return json({id,status:"pendente"},201,h)
+ }catch(error){console.error("expense_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível cadastrar a despesa."},500,h)}
+ }
+ if(r.method==="PATCH"&&u.pathname.startsWith("/api/despesas/")){
+ try{const id=u.pathname.split("/").pop()??"",b=await body(r),metodo=String(b.metodo??"pix");if(b.status!=="paga"||!["pix","dinheiro","cartao","outro"].includes(metodo))return json({error:"Informe uma forma válida para dar baixa na despesa."},400,h);
+ const expense=await e.DB.prepare("SELECT id,descricao,valor_centavos,status FROM despesas WHERE id=?").bind(id).first();if(!expense)return json({error:"Despesa não encontrada."},404,h);if(expense.status!=="pendente")return json({error:"Esta despesa não está pendente."},409,h);
+ const movementId=crypto.randomUUID();await e.DB.batch([
+ e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?,'saida','despesa',?,?,?, ?,? WHERE EXISTS(SELECT 1 FROM despesas WHERE id=? AND status='pendente')").bind(movementId,id,expense.descricao,Number(expense.valor_centavos),metodo,current.id,id),
+ e.DB.prepare("UPDATE despesas SET status='paga',metodo=?,pago_em=datetime('now','-3 hours') WHERE id=? AND status='pendente' AND EXISTS(SELECT 1 FROM movimentacoes WHERE id=?)").bind(metodo,id,movementId)
+ ]);
+ const updated=await e.DB.prepare("SELECT status FROM despesas WHERE id=?").bind(id).first();if(updated?.status!=="paga")return json({error:"Não foi possível confirmar a baixa desta despesa."},409,h);
+ await audit(e,current.id,"despesa_paga","despesas");return json({status:"paga"},200,h)
+ }catch(error){console.error("expense_pay_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível dar baixa na despesa."},500,h)}
+ }
+ if(r.method==="GET"&&u.pathname==="/api/financeiro"){
   const [payments,open]=await Promise.all([
-   e.DB.prepare("SELECT p.id,p.atendimento_id,p.valor_centavos,p.metodo,p.status,p.recebido_em,p.criado_em,c.nome cliente,COALESCE(v.modelo,'') veiculo,a.data_hora FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY CASE p.status WHEN 'pendente' THEN 0 ELSE 1 END,p.criado_em DESC LIMIT 150").all<any>(),
+   e.DB.prepare("SELECT p.id,p.atendimento_id,p.valor_centavos,p.metodo,p.modalidade,p.status,p.recebido_em,p.criado_em,c.nome cliente,COALESCE(v.modelo,'') veiculo,a.data_hora FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY CASE p.status WHEN 'pendente' THEN 0 ELSE 1 END,p.criado_em DESC LIMIT 150").all<any>(),
    e.DB.prepare("SELECT a.id,a.data_hora,a.valor_centavos,c.nome cliente,COALESCE(v.modelo,'') veiculo,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,MAX(0,a.valor_centavos-COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0)) saldo_centavos FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.status<>'cancelado' AND a.valor_centavos>COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0) ORDER BY a.data_hora DESC LIMIT 100").all<any>()
   ]);
   const totals=await e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN status='recebido' THEN valor_centavos ELSE 0 END),0) recebido_centavos,COALESCE(SUM(CASE WHEN status='pendente' THEN valor_centavos ELSE 0 END),0) pendente_centavos,COUNT(CASE WHEN status='recebido' THEN 1 END) recebidos,COUNT(CASE WHEN status='pendente' THEN 1 END) pendentes FROM pagamentos").first<any>();
@@ -119,11 +142,11 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
  }
  if(r.method==="POST"&&u.pathname==="/api/pagamentos"){
   try{const b=await body(r),atendimentoId=String(b.atendimento_id??""),valor=Math.round(Number(b.valor_reais??0)*100),metodo=String(b.metodo??"");
-   if(!atendimentoId||!Number.isSafeInteger(valor)||valor<=0||valor>100000000||!["dinheiro","pix","cartao","outro"].includes(metodo))return json({error:"Informe atendimento, valor válido e forma de pagamento."},400,h);
+   if(!atendimentoId||!Number.isSafeInteger(valor)||valor<=0||valor>100000000||!["dinheiro","pix","cartao","outro"].includes(metodo)||((metodo==="cartao")&&!["credito","debito"].includes(String(b.modalidade??""))))return json({error:"Informe atendimento, valor válido e forma de pagamento."},400,h);
    const at=await e.DB.prepare("SELECT a.id,a.valor_centavos,a.status,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0) comprometido FROM atendimentos a WHERE a.id=?").bind(atendimentoId).first<any>();
    if(!at||at.status==="cancelado")return json({error:"Atendimento não encontrado ou cancelado."},404,h);
    const saldo=Math.max(0,Number(at.valor_centavos)-Number(at.comprometido));if(valor>saldo)return json({error:"O valor informado é maior que o saldo em aberto."},400,h);
-   const id=crypto.randomUUID();const inserted=await e.DB.prepare("INSERT INTO pagamentos(id,atendimento_id,valor_centavos,metodo,status,criado_por) SELECT ?,a.id,?,?,'pendente',? FROM atendimentos a WHERE a.id=? AND a.status<>'cancelado' AND ?<=a.valor_centavos-COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0)").bind(id,valor,metodo,(current as any).id,atendimentoId,valor).run();if(!inserted.meta.changes)return json({error:"O saldo mudou ou já foi reservado. Atualize a tela."},409,h);
+   const id=crypto.randomUUID();const inserted=await e.DB.prepare("INSERT INTO pagamentos(id,atendimento_id,valor_centavos,metodo,modalidade,status,criado_por) SELECT ?,a.id,?,?,?,'pendente',? FROM atendimentos a WHERE a.id=? AND a.status<>'cancelado' AND ?<=a.valor_centavos-COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0)").bind(id,valor,metodo,metodo==="cartao"?String(b.modalidade):"nao_aplicavel",(current as any).id,atendimentoId,valor).run();if(!inserted.meta.changes)return json({error:"O saldo mudou ou já foi reservado. Atualize a tela."},409,h);
    await audit(e,(current as any).id,"pagamento_pendente_criado","pagamentos");return json({id,status:"pendente"},201,h)
   }catch(error){console.error("payment_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível registrar o pagamento."},500,h)}
  }
