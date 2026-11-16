@@ -1337,3 +1337,23 @@ section{max-width:1600px;padding:38px clamp(22px,3.6vw,56px) 64px}
  .appointment-row .row-actions{grid-column:1 / -1;grid-row:2;padding-left:68px}
  .appointment-row .row-actions .status{margin-right:auto}
 }
+
+
+/* Ficha do atendimento: status, horário e financeiro em hierarquia clara */
+.appointment-modal-status{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 15px;padding:13px 15px;border:1px solid #405a3d;border-radius:13px;background:linear-gradient(110deg,#223725,#131f17)}
+.appointment-modal-status>div{display:grid;gap:3px;text-align:right}
+.appointment-modal-status>div strong{font:800 20px Manrope;letter-spacing:-.5px;color:#d8f1b7;font-variant-numeric:tabular-nums}
+.appointment-modal-status>div small{font-size:9px;color:#a1b49e}
+.appointment-detail-grid{margin-top:0}
+.appointment-detail-grid>div:nth-child(1){grid-column:1/-1;border-color:#40583d;background:linear-gradient(120deg,#19291d,#101812)}
+.appointment-detail-grid>div:nth-child(1) b{font-size:14px;color:#d9efc2}
+.appointment-detail-grid>div:nth-child(4) b{font-size:16px;color:#d8f1b7}
+.appointment-detail-grid>div:nth-child(6),.appointment-detail-grid>div:nth-child(7){background:#121d15}
+@media(max-width:700px){
+ .appointment-modal-status{padding:12px 13px;margin-bottom:12px}
+ .appointment-modal-status>div strong{font-size:19px}
+ .appointment-detail-grid{gap:7px}
+ .appointment-detail-grid>div{min-height:65px;padding:10px}
+ .appointment-detail-grid>div:nth-child(1){grid-column:1/-1}
+ .appointment-detail-grid>div:nth-child(1) b{font-size:13px}
+}
