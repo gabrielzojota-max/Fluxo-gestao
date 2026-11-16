@@ -1,11 +1,12 @@
 export interface Env { DB: D1Database; APP_ORIGIN?: string; BOOTSTRAP_SECRET?: string }
-const enc=new TextEncoder(), TTL=604800, ITER=310000;
+const enc=new TextEncoder(), TTL=604800, ITER=100000;
 const b64=(b:Uint8Array)=>btoa(String.fromCharCode(...b)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");
 const un64=(s:string)=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")+"===".slice((s.length+3)%4)),c=>c.charCodeAt(0));
 const random=(n=32)=>{const b=new Uint8Array(n);crypto.getRandomValues(b);return b64(b)};
 const sha=async(s:string)=>b64(new Uint8Array(await crypto.subtle.digest("SHA-256",enc.encode(s))));
-async function hashPassword(p:string,s=random(16)){const k=await crypto.subtle.importKey("raw",enc.encode(p),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:un64(s),iterations:ITER},k,256);return s+":"+b64(new Uint8Array(bits))}
-async function verify(p:string,h:string){const [s]=h.split(":");return !!s&&(await hashPassword(p,s))===h}
+async function hashPassword(p:string,s=random(16)){const k=await crypto.subtle.importKey("raw",enc.encode(p),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:un64(s),iterations:ITER},k,256);return "v2$"+ITER+"$"+s+"$"+b64(new Uint8Array(bits))}
+function passwordParams(h:string){if(h.startsWith("v2$")){const [,iterations,salt]=h.split("$");return {salt,iterations:Number(iterations)}}const [salt]=h.split(":");return {salt,iterations:310000}}
+function passwordDigest(h:string){return h.startsWith("v2$")?h.split("$")[3]:h.split(":")[1]}
 const json=(v:unknown,status=200,h:HeadersInit={})=>new Response(JSON.stringify(v),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store",...h}});
 function cookie(t:string,age:number){return `fluxo_session=${t}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${age}`}
 function getCookie(r:Request){return r.headers.get("Cookie")?.split(";").map(x=>x.trim()).find(x=>x.startsWith("fluxo_session="))?.slice(14)??null}
@@ -24,19 +25,20 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
   if(!key||key.length!==e.BOOTSTRAP_SECRET.length||await sha(key)!==await sha(e.BOOTSTRAP_SECRET))return json({error:"Não autorizado"},401,h);
   try{const b=await body(r),owners=b.owners;if(!Array.isArray(owners)||owners.length<1||owners.length>2)return json({error:"Informe um ou dois sócios"},400,h);
    const count=await e.DB.prepare("SELECT COUNT(*) total FROM usuarios").first<any>();if(count.total!==0)return json({error:"Configuração inicial já concluída"},409,h);
-   const data=owners.map((x:any)=>({nome:String(x.nome??"").trim(),email:String(x.email??"").trim().toLowerCase(),senha:String(x.senha??"")}));
-   if(data.some(x=>x.nome.length<2||x.nome.length>100||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x.email)||x.senha.length<8||x.senha.length>128)||(data.length===2&&data[0].email===data[1].email))return json({error:"Confira nomes, e-mails diferentes e senhas de 8 a 128 caracteres"},400,h);
-   await e.DB.batch(await Promise.all(data.map(async x=>e.DB.prepare("INSERT INTO usuarios(id,nome,email,senha_hash,papel,status) VALUES(?,?,?,?,'socio','ativo')").bind(crypto.randomUUID(),x.nome,x.email,await hashPassword(x.senha)))));
+   const data=owners.map((x:any)=>({nome:String(x.nome??"").trim(),email:String(x.email??"").trim().toLowerCase(),senha_hash:String(x.senha_hash??""),salt:String(x.salt??"")}));
+   if(data.some(x=>x.nome.length<2||x.nome.length>100||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x.email)||x.senha_hash.length!==43||x.salt.length<20||x.salt.length>24)||(data.length===2&&data[0].email===data[1].email))return json({error:"Confira nomes, e-mails diferentes e senhas de 8 a 128 caracteres"},400,h);
+   await e.DB.batch(await Promise.all(data.map(async x=>e.DB.prepare("INSERT INTO usuarios(id,nome,email,senha_hash,papel,status) VALUES(?,?,?,?,'socio','ativo')").bind(crypto.randomUUID(),x.nome,x.email,"v2$"+ITER+"$"+x.salt+"$"+x.senha_hash))));
    await audit(e,null,"configuracao_inicial","usuarios");return json({status:"configured",ownersCreated:data.length},201,h)
   }catch(error){console.error("auth_setup_error",{name:error instanceof Error?error.name:"UnknownError",message:error instanceof Error?error.message:"Unknown error"});return json({error:"Não foi possível concluir a configuração inicial",reference:"auth_setup_error"},500,h)}
  }
+ if(r.method==="GET"&&u.pathname==="/api/auth/login-info"){const email=(u.searchParams.get("email")??"").trim().toLowerCase();if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return json({error:"E-mail inválido"},400,h);const account=await e.DB.prepare("SELECT senha_hash FROM usuarios WHERE email=? AND status='ativo'").bind(email).first<any>();if(!account?.senha_hash)return json({error:"Conta não encontrada"},404,h);return json(passwordParams(account.senha_hash),200,h)}
  if(r.method==="POST"&&u.pathname==="/api/auth/login"){
-  try{const b=await body(r),email=String(b.email??"").trim().toLowerCase(),password=String(b.senha??""),ip=r.headers.get("CF-Connecting-IP")??"unknown",key=await sha(email+"|"+ip),now=Math.floor(Date.now()/1000);
+  try{const b=await body(r),email=String(b.email??"").trim().toLowerCase(),proof=String(b.senha_hash??""),ip=r.headers.get("CF-Connecting-IP")??"unknown",key=await sha(email+"|"+ip),now=Math.floor(Date.now()/1000);
    await e.DB.prepare("DELETE FROM tentativas_login WHERE ocorreu_em<?").bind(now-900).run();
    const attempts=await e.DB.prepare("SELECT COUNT(*) total FROM tentativas_login WHERE chave=? AND ocorreu_em>?").bind(key,now-900).first<any>();
    if(attempts.total>=8)return json({error:"Muitas tentativas. Aguarde 15 minutos."},429,h);
    const account=await e.DB.prepare("SELECT id,nome,email,papel,senha_hash FROM usuarios WHERE email=? AND status='ativo'").bind(email).first<any>();
-   if(!account?.senha_hash||!await verify(password,account.senha_hash)){await e.DB.prepare("INSERT INTO tentativas_login(id,chave,ocorreu_em) VALUES(?,?,?)").bind(crypto.randomUUID(),key,now).run();return json({error:"E-mail ou senha inválidos"},401,h)}
+   if(!account?.senha_hash||!proof||proof!==passwordDigest(account.senha_hash)){await e.DB.prepare("INSERT INTO tentativas_login(id,chave,ocorreu_em) VALUES(?,?,?)").bind(crypto.randomUUID(),key,now).run();return json({error:"E-mail ou senha inválidos"},401,h)}
    await e.DB.prepare("DELETE FROM tentativas_login WHERE chave=?").bind(key).run();
    const token=random(),expires=new Date(Date.now()+TTL*1000).toISOString().slice(0,19).replace("T"," ");
    await e.DB.prepare("INSERT INTO sessoes(id,usuario_id,token_hash,expira_em) VALUES(?,?,?,?)").bind(crypto.randomUUID(),account.id,await sha(token),expires).run();
