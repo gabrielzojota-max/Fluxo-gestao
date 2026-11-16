@@ -5,7 +5,7 @@ const API="";
 const nav=[[ "Painel",LayoutDashboard ],[ "Atendimentos",CalendarDays ],[ "Clientes",Users ],[ "Financeiro",Wallet ],[ "Estoque",Package ],[ "Galeria",Images ],[ "Relatórios",ChartNoAxesCombined ],[ "Equipe e configurações",Settings ]] as const;
 type User={id:string;nome:string;email:string;papel:string};
 const enc=new TextEncoder();
-function b64url(bytes:Uint8Array){return btoa(String.fromCharCode(...bytes)).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/g,"")}
+function b64url(bytes:Uint8Array){return btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"")}
 async function deriveLoginProof(password:string,salt:string,iterations:number){const key=await crypto.subtle.importKey("raw",enc.encode(password),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:Uint8Array.from(atob(salt.replace(/-/g,"+").replace(/_/g,"/")+"===".slice((salt.length+3)%4)),c=>c.charCodeAt(0)),iterations},key,256);return b64url(new Uint8Array(bits))}
 async function api(path:string,body?:unknown,token?:string){const headers:Record<string,string>={};if(body)headers["Content-Type"]="application/json";if(token)headers["Authorization"]="Bearer "+token;const r=await fetch(API+path,{method:body?"POST":"GET",credentials:"include",headers:Object.keys(headers).length?headers:undefined,body:body?JSON.stringify(body):undefined});const data=await r.json().catch(()=>({error:"Resposta inválida do servidor"}));if(!r.ok)throw new Error(data.reference?`${data.error||"Falha na solicitação"} (${data.reference})`:data.error||"Não foi possível concluir a solicitação");return data}
 export default function App(){
