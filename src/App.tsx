@@ -1,5 +1,5 @@
 import {useEffect,useState,type FormEvent} from "react";
-import {LayoutDashboard,CalendarDays,Users,Wallet,Package,Images,ChartNoAxesCombined,Settings,Menu,Bell,Plus,CarFront,ArrowUpRight,Clock3,LogOut,LockKeyhole,Mail,Eye,EyeOff,ShieldCheck,Search,CheckCircle2,UserPlus,Wrench,RefreshCw,ArrowLeft,CircleDollarSign,CreditCard,Receipt,CalendarClock,BadgeCheck} from "lucide-react";
+import {LayoutDashboard,CalendarDays,Users,Wallet,Package,Images,ChartNoAxesCombined,Settings,Menu,Bell,Plus,CarFront,ArrowUpRight,Clock3,LogOut,LockKeyhole,Mail,Eye,EyeOff,ShieldCheck,Search,CheckCircle2,PlayCircle,UserPlus,Wrench,RefreshCw,ArrowLeft,CircleDollarSign,CreditCard,Receipt,CalendarClock,BadgeCheck} from "lucide-react";
 
 const API="";
 const nav=[[ "Painel",LayoutDashboard ],[ "Atendimentos",CalendarDays ],[ "Clientes",Users ],[ "Serviços",Wrench ],[ "Financeiro",Wallet ],[ "Estoque",Package ],[ "Galeria",Images ],[ "Relatórios",ChartNoAxesCombined ],[ "Equipe e configurações",Settings ]] as const;
