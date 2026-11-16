@@ -10,14 +10,15 @@ function passwordDigest(h:string){return h.startsWith("v2$")?h.split("$")[3]:h.s
 const json=(v:unknown,status=200,h:HeadersInit={})=>new Response(JSON.stringify(v),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store",...h}});
 function cookie(t:string,age:number){return `fluxo_session=${t}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${age}`}
 function getCookie(r:Request){return r.headers.get("Cookie")?.split(";").map(x=>x.trim()).find(x=>x.startsWith("fluxo_session="))?.slice(14)??null}
-function cors(r:Request,e:Env){const h=new Headers({"Vary":"Origin"}),o=r.headers.get("Origin");if(o&&e.APP_ORIGIN&&o===e.APP_ORIGIN){h.set("Access-Control-Allow-Origin",o);h.set("Access-Control-Allow-Credentials","true");h.set("Access-Control-Allow-Methods","GET,POST,PATCH,OPTIONS");h.set("Access-Control-Allow-Headers","Content-Type, Authorization")}return h}
+function allowedOrigin(o:string|null,e:Env){return !!o&&((!!e.APP_ORIGIN&&o===e.APP_ORIGIN)||/^https:\/\/[a-z0-9-]+\.fluxo-gestao-b7w\.pages\.dev$/.test(o))}
+function cors(r:Request,e:Env){const h=new Headers({"Vary":"Origin"}),o=r.headers.get("Origin");if(allowedOrigin(o,e)){h.set("Access-Control-Allow-Origin",o!);h.set("Access-Control-Allow-Credentials","true");h.set("Access-Control-Allow-Methods","GET,POST,PATCH,OPTIONS");h.set("Access-Control-Allow-Headers","Content-Type, Authorization")}return h}
 async function audit(e:Env,u:string|null,a:string,d:string){await e.DB.prepare("INSERT INTO auditoria(id,usuario_id,acao,entidade) VALUES(?,?,?,?)").bind(crypto.randomUUID(),u,a,d).run()}
 async function userFrom(r:Request,e:Env){const t=getCookie(r);if(!t)return null;return e.DB.prepare("SELECT u.id,u.nome,u.email,u.papel FROM sessoes s JOIN usuarios u ON u.id=s.usuario_id WHERE s.token_hash=? AND s.revogada_em IS NULL AND s.expira_em>datetime('now') AND u.status='ativo'").bind(await sha(t)).first()}
 async function body(r:Request){if(!r.headers.get("Content-Type")?.includes("application/json"))throw Error("content-type");return await r.json() as any}
 export default {async fetch(r:Request,e:Env):Promise<Response>{
  const u=new URL(r.url),h=cors(r,e),origin=r.headers.get("Origin");
  if(r.method==="OPTIONS")return new Response(null,{status:204,headers:h});
- if(u.pathname.startsWith("/api/")&&origin&&(!e.APP_ORIGIN||origin!==e.APP_ORIGIN))return json({error:"Origem não autorizada"},403,h);
+ if(u.pathname.startsWith("/api/")&&origin&&!allowedOrigin(origin,e))return json({error:"Origem não autorizada"},403,h);
  if(r.method==="GET"&&u.pathname==="/api/health"){try{const x=await e.DB.prepare("SELECT COUNT(*) total FROM sqlite_master WHERE type='table' AND name NOT LIKE '_cf_%'").first<any>();return json({status:"ok",database:"connected",applicationTables:x?.total??0},200,h)}catch{return json({status:"error",database:"unavailable"},503,h)}}
  if(r.method==="POST"&&u.pathname==="/api/auth/setup-owners"){
   if(!e.BOOTSTRAP_SECRET)return json({error:"Configuração inicial indisponível"},503,h);
