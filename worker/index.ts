@@ -222,16 +222,16 @@ if(r.method==="GET"&&u.pathname==="/api/financeiro"){
  }
  if(r.method==="POST"&&u.pathname==="/api/atendimentos"){
   try{const b=await body(r),clienteId=String(b.cliente_id??""),servicoId=String(b.servico_id??""),dataHora=String(b.data_hora??""),observacoes=String(b.observacoes??"").trim(),modelo=String(b.modelo??"").trim(),placa=String(b.placa??"").trim(),requestedVehicleId=String(b.veiculo_id??"");
-   if(!clienteId||!servicoId||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$/.test(dataHora)||observacoes.length>1000||modelo.length>80||placa.length>12)return json({error:"Preencha cliente, serviço e data/hora corretamente."},400,h);
-   const [client,service]=await Promise.all([e.DB.prepare("SELECT id FROM clientes WHERE id=?").bind(clienteId).first<any>(),e.DB.prepare("SELECT id,nome,preco_sugerido_centavos FROM catalogo_servicos WHERE id=? AND ativo=1").bind(servicoId).first<any>()]);
-   if(!client||!service)return json({error:"Cliente ou serviço não encontrado."},404,h);
+   const [client,service]=await Promise.all([e.DB.prepare("SELECT id FROM clientes WHERE id=?").bind(clienteId).first<any>(),servicoId?e.DB.prepare("SELECT id,nome,preco_sugerido_centavos FROM catalogo_servicos WHERE id=? AND ativo=1").bind(servicoId).first<any>():Promise.resolve(null)]);
+   const serviceName=String(b.servico_nome??service?.nome??"").trim(),rawPrice=Number(b.valor_reais),price=Number.isFinite(rawPrice)?Math.round(rawPrice*100):NaN;
+   if(!clienteId||!client||(!service&&!serviceName)||!serviceName||serviceName.length>120||!Number.isSafeInteger(price)||price<0||price>1000000000||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$/.test(dataHora)||observacoes.length>1000||modelo.length>80||placa.length>12)return json({error:"Preencha cliente, serviço, valor e data/hora corretamente."},400,h);
    let vehicleId:string|null=null;
    if(requestedVehicleId){const vehicle=await e.DB.prepare("SELECT id FROM veiculos WHERE id=? AND cliente_id=?").bind(requestedVehicleId,clienteId).first<any>();if(!vehicle)return json({error:"O veículo selecionado não pertence a este cliente."},400,h);vehicleId=requestedVehicleId}
    else if(modelo||placa){vehicleId=crypto.randomUUID();await e.DB.prepare("INSERT INTO veiculos(id,cliente_id,modelo,placa) VALUES(?,?,?,?)").bind(vehicleId,clienteId,modelo||null,placa||null).run()}
-   const id=crypto.randomUUID(),price=Number(service.preco_sugerido_centavos)||0;
+   const id=crypto.randomUUID();
    await e.DB.batch([
     e.DB.prepare("INSERT INTO atendimentos(id,cliente_id,veiculo_id,data_hora,status,valor_centavos,criado_por,observacoes) VALUES(?,?,?,?,'agendado',?,?,?)").bind(id,clienteId,vehicleId,dataHora,price,(current as any).id,observacoes||null),
-    e.DB.prepare("INSERT INTO atendimento_servicos(atendimento_id,servico_id,descricao,valor_centavos) VALUES(?,?,?,?)").bind(id,servicoId,service.nome,price)
+    e.DB.prepare("INSERT INTO atendimento_servicos(atendimento_id,servico_id,descricao,valor_centavos) VALUES(?,?,?,?)").bind(id,service?.id??null,serviceName,price)
    ]);
    await audit(e,(current as any).id,"atendimento_criado","atendimentos");return json({id},201,h)
   }catch(error){console.error("atendimento_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível criar o atendimento."},500,h)}
