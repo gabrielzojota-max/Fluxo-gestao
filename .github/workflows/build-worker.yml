@@ -15,8 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - run: npm install
       - name: Compile Worker TypeScript
         run: |
           node --input-type=commonjs -e "const fs=require('fs');const ts=require('typescript');const src=fs.readFileSync('worker/index.ts','utf8');const out=ts.transpileModule(src,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText;fs.writeFileSync('worker/index.js',out);"
