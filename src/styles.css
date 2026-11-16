@@ -47,3 +47,5 @@
 .stats article small{display:block}
 @media(max-width:950px){.module-grid{grid-template-columns:1fr}.list-head{align-items:flex-start;flex-direction:column}.search-field{max-width:none;width:100%}}
 @media(max-width:700px){.grid-form{grid-template-columns:1fr}.grid-form .wide{grid-column:auto}.form-card,.list-card{padding:16px}.data-row{align-items:flex-start}.appointment-row{flex-direction:column}.row-actions{width:100%;justify-content:flex-end}.list-head{gap:10px}}
+
+.vehicle-card h2{margin-bottom:4px}.vehicle-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.vehicle-fields>div{display:grid;gap:8px}.vehicle-list{margin-top:22px;border-top:1px solid #29362c;padding-top:15px}.vehicle-list h3{font:700 12px Manrope;margin:0 0 8px;color:#dce7dd}.vehicle-list>small,.field-hint{color:#829187;font-size:10px}.vehicle-card .data-row{padding:9px 0}.data-form select{appearance:auto}@media(max-width:700px){.vehicle-fields{grid-template-columns:1fr}}
