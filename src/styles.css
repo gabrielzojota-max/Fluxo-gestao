@@ -223,3 +223,7 @@ section{padding:42px clamp(20px,3vw,48px)}
  .mobile-nav button svg{flex:none}
 }
 @media(min-width:701px){.nav-backdrop,.mobile-nav{display:none}}
+
+/* Estoque */
+.stock-page{display:grid;gap:18px}.stock-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.stock-summary article{background:#151f18;border:1px solid #2d4030;border-radius:12px;padding:17px;display:grid;gap:8px}.stock-summary small{font-size:11px;color:#98a99b}.stock-summary strong{font:800 24px Manrope;color:#d5efb4}.stock-forms{align-items:start}.stock-row,.stock-movement{gap:12px}.stock-balance{display:flex;align-items:flex-end;flex-direction:column;gap:5px;white-space:nowrap}.stock-balance strong{font:700 14px Manrope;color:#d9edc7}.stock-status{font-size:10px;border-radius:20px;padding:4px 8px;background:#203326;color:#bce58c}.stock-status.baixo{background:#3b321e;color:#f2cf83}.stock-status.zerado{background:#402525;color:#f3a3a3}
+@media(max-width:700px){.stock-summary{gap:8px}.stock-summary article{padding:12px 10px}.stock-summary small{font-size:10px}.stock-summary strong{font-size:21px}.stock-row,.stock-movement{align-items:flex-start}.stock-balance strong{font-size:12px}.stock-forms{grid-template-columns:1fr}}
