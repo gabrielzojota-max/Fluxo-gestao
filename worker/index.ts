@@ -7,7 +7,7 @@ const sha=async(s:string)=>b64(new Uint8Array(await crypto.subtle.digest("SHA-25
 async function hashPassword(p:string,s=random(16)){const k=await crypto.subtle.importKey("raw",enc.encode(p),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:un64(s),iterations:ITER},k,256);return s+":"+b64(new Uint8Array(bits))}
 async function verify(p:string,h:string){const [s]=h.split(":");return !!s&&(await hashPassword(p,s))===h}
 const json=(v:unknown,status=200,h:HeadersInit={})=>new Response(JSON.stringify(v),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store",...h}});
-function cookie(t:string,age:number){return `fluxo_session=${t}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${age}`}
+function cookie(t:string,age:number){return `fluxo_session=${t}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${age}`}
 function getCookie(r:Request){return r.headers.get("Cookie")?.split(";").map(x=>x.trim()).find(x=>x.startsWith("fluxo_session="))?.slice(14)??null}
 function cors(r:Request,e:Env){const h=new Headers({"Vary":"Origin"}),o=r.headers.get("Origin");if(o&&e.APP_ORIGIN&&o===e.APP_ORIGIN){h.set("Access-Control-Allow-Origin",o);h.set("Access-Control-Allow-Credentials","true");h.set("Access-Control-Allow-Methods","GET,POST,OPTIONS");h.set("Access-Control-Allow-Headers","Content-Type, Authorization")}return h}
 async function audit(e:Env,u:string|null,a:string,d:string){await e.DB.prepare("INSERT INTO auditoria(id,usuario_id,acao,entidade) VALUES(?,?,?,?)").bind(crypto.randomUUID(),u,a,d).run()}
