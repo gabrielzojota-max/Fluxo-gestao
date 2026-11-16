@@ -95,7 +95,7 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
    const at=await e.DB.prepare("SELECT a.id,a.valor_centavos,a.status,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0) comprometido FROM atendimentos a WHERE a.id=?").bind(atendimentoId).first<any>();
    if(!at||at.status==="cancelado")return json({error:"Atendimento não encontrado ou cancelado."},404,h);
    const saldo=Math.max(0,Number(at.valor_centavos)-Number(at.comprometido));if(valor>saldo)return json({error:"O valor informado é maior que o saldo em aberto."},400,h);
-   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO pagamentos(id,atendimento_id,valor_centavos,metodo,status,criado_por) VALUES(?,?,?,?,'pendente',?)").bind(id,atendimentoId,valor,metodo,(current as any).id).run();
+   const id=crypto.randomUUID();const inserted=await e.DB.prepare("INSERT INTO pagamentos(id,atendimento_id,valor_centavos,metodo,status,criado_por) SELECT ?,a.id,?,?,'pendente',? FROM atendimentos a WHERE a.id=? AND a.status<>'cancelado' AND ?<=a.valor_centavos-COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0)").bind(id,valor,metodo,(current as any).id,atendimentoId,valor).run();if(!inserted.meta.changes)return json({error:"O saldo mudou ou já foi reservado. Atualize a tela."},409,h);
    await audit(e,(current as any).id,"pagamento_pendente_criado","pagamentos");return json({id,status:"pendente"},201,h)
   }catch(error){console.error("payment_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível registrar o pagamento."},500,h)}
  }
