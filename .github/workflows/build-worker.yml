@@ -1,0 +1,31 @@
+name: Compile FLUXO API Worker
+on:
+  push:
+    branches: [main]
+    paths:
+      - "worker/index.ts"
+      - ".github/workflows/build-worker.yml"
+permissions:
+  contents: write
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Compile Worker TypeScript
+        run: |
+          node --input-type=commonjs -e "const fs=require('fs');const ts=require('typescript');const src=fs.readFileSync('worker/index.ts','utf8');const out=ts.transpileModule(src,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText;fs.writeFileSync('worker/index.js',out);"
+      - name: Commit compiled Worker
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add worker/index.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Build deployable FLUXO API Worker"
+            git push
+          fi
