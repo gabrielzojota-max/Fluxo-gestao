@@ -26,5 +26,6 @@ jobs:
           git add worker/index.js
           if ! git diff --cached --quiet; then
             git commit -m "Build deployable FLUXO API Worker"
+            git pull --rebase origin main
             git push
           fi
