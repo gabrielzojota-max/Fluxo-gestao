@@ -1455,3 +1455,14 @@ section{max-width:1600px;padding:38px clamp(22px,3.6vw,56px) 64px}
 .field-help{color:var(--fx-muted);font-size:13px;margin:4px 0 10px}
 .add-service-line{margin-top:4px}
 @media(max-width:640px){.appointment-service-line{grid-template-columns:minmax(0,1fr);gap:8px;padding:10px}.service-line-main{grid-template-columns:minmax(0,1fr)}.service-line-price{display:grid;grid-template-columns:72px minmax(0,1fr);align-items:center;gap:8px}.service-line-price label{margin:0}.appointment-service-line .cancel-action{justify-self:start}}
+
+/* Appointment service price breakdown */
+.appointment-service-breakdown{border:1px solid var(--fx-stroke);background:var(--fx-panel-2);border-radius:16px;padding:14px;margin:14px 0}
+.service-breakdown-heading,.service-breakdown-row,.service-breakdown-total{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.service-breakdown-heading{padding-bottom:10px;border-bottom:1px solid var(--fx-stroke);font-size:14px}
+.service-breakdown-heading span{color:var(--fx-muted);font-size:12px}
+.service-breakdown-row{padding:10px 0;border-bottom:1px solid var(--fx-stroke);font-size:14px}
+.service-breakdown-row span{min-width:0;overflow-wrap:anywhere}
+.service-breakdown-row b,.service-breakdown-total strong{white-space:nowrap;font-variant-numeric:tabular-nums}
+.service-breakdown-total{padding-top:12px;font-size:14px}
+.service-breakdown-total strong{color:var(--fx-lime);font-size:17px}
