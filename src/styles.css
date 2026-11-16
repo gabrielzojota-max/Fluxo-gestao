@@ -1466,3 +1466,18 @@ section{max-width:1600px;padding:38px clamp(22px,3.6vw,56px) 64px}
 .service-breakdown-row b,.service-breakdown-total strong{white-space:nowrap;font-variant-numeric:tabular-nums}
 .service-breakdown-total{padding-top:12px;font-size:14px}
 .service-breakdown-total strong{color:var(--fx-lime);font-size:17px}
+
+
+/* Conciliação financeira por atendimento */
+.finance-reconcile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.finance-reconcile-grid>span{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--fx-stroke);border-radius:12px;background:rgba(255,255,255,.025);color:var(--fx-muted);font-size:11px}
+.finance-reconcile-grid strong{color:var(--fx-white);font-size:13px;font-weight:750}
+.finance-reconcile-detail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--fx-stroke)}
+.finance-reconcile-detail>div{display:flex;flex-direction:column;gap:7px;min-width:0}
+.finance-reconcile-detail>div>b{font-size:11px;color:var(--fx-muted);text-transform:uppercase;letter-spacing:.06em}
+.finance-reconcile-detail>div>span{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-size:12px;color:var(--fx-white)}
+.finance-reconcile-detail>div>span strong{white-space:nowrap;font-size:12px}
+.finance-reconcile-detail small{color:var(--fx-muted);font-size:11px}
+.due-action>small{display:block;color:var(--fx-muted);font-size:10px;text-align:right;margin:4px 0 8px}
+.due-action button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:680px){.finance-reconcile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.finance-reconcile-detail{grid-template-columns:1fr}.due-action>small{text-align:left}}
