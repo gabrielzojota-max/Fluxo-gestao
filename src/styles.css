@@ -1357,3 +1357,13 @@ section{max-width:1600px;padding:38px clamp(22px,3.6vw,56px) 64px}
  .appointment-detail-grid>div:nth-child(1){grid-column:1/-1}
  .appointment-detail-grid>div:nth-child(1) b{font-size:13px}
 }
+
+
+/* Conferência financeira após conclusão do serviço */
+.appointment-payment-review{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:15px;border:1px solid #536b3c;border-radius:14px;background:linear-gradient(120deg,#1d2c1d,#121b15)}
+.appointment-payment-review>div{display:grid;gap:5px;min-width:0}
+.appointment-payment-review small{font-size:9px;font-weight:850;letter-spacing:1px;color:#b6dc8b}
+.appointment-payment-review strong{font:800 18px Manrope;color:#e2f4cf}
+.appointment-payment-review span{font-size:11px;line-height:1.45;color:#aab9aa}
+.appointment-payment-review button{flex:none;min-height:42px}
+@media(max-width:700px){.appointment-payment-review{align-items:stretch;flex-direction:column;gap:11px;padding:13px}.appointment-payment-review button{width:100%;justify-content:center;min-height:46px}}
