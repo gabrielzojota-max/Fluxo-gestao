@@ -1,4 +1,4 @@
-import {useEffect,useState} from "react";
+import {useEffect,useState,type FormEvent} from "react";
 import {LayoutDashboard,CalendarDays,Users,Wallet,Package,Images,ChartNoAxesCombined,Settings,Menu,Bell,Plus,CarFront,ArrowUpRight,Clock3,LogOut,LockKeyhole,Mail,Eye,EyeOff,ShieldCheck} from "lucide-react";
 
 const API="https://fluxo-gestao-api.equipe-rec.workers.dev";
@@ -9,7 +9,7 @@ export default function App(){
  const[active,setActive]=useState("Painel"),[open,setOpen]=useState(false),[user,setUser]=useState<User|null>(null),[mode,setMode]=useState<"login"|"setup">("login"),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[showPass,setShowPass]=useState(false);
  const[email,setEmail]=useState("gabrielzojota@gmail.com"),[senha,setSenha]=useState(""),[nome,setNome]=useState("Gabriel"),[confirm,setConfirm]=useState(""),[bootstrap,setBootstrap]=useState("");
  useEffect(()=>{api("/api/auth/me").then(x=>setUser(x.user)).catch(()=>setUser(null)).finally(()=>setLoading(false))},[]);
- async function login(e:React.FormEvent){e.preventDefault();setBusy(true);setError("");try{const x=await api("/api/auth/login",{email,senha});setUser(x.user);setSenha("")}catch(x){setError(x instanceof Error?x.message:"Falha no login")}finally{setBusy(false)}}
+ async function login(e:FormEvent){e.preventDefault();setBusy(true);setError("");try{const x=await api("/api/auth/login",{email,senha});setUser(x.user);setSenha("")}catch(x){setError(x instanceof Error?x.message:"Falha no login")}finally{setBusy(false)}}
  async function setup(e:React.FormEvent){e.preventDefault();setError("");if(senha.length<12){setError("A senha precisa ter pelo menos 12 caracteres.");return}if(senha!==confirm){setError("As senhas não conferem.");return}setBusy(true);try{await api("/api/auth/setup-owners",{owners:[{nome,email,senha}]},bootstrap);setError("Configuração enviada. Se o código de configuração estiver correto, você poderá entrar.");setMode("login");setSenha("");setConfirm("");}catch(x){setError(x instanceof Error?x.message:"Falha na configuração")}finally{setBusy(false)}}
  async function logout(){try{await api("/api/auth/logout",{})}finally{setUser(null);setSenha("")}}
  if(loading)return <div className="auth-screen"><div className="auth-card"><div className="brand auth-brand"><b>F</b><div><strong>FLUXO</strong><small>ESTÉTICA AUTOMOTIVA</small></div></div><p>Verificando sua sessão...</p></div></div>;
