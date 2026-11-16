@@ -38,7 +38,7 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
    const account=await e.DB.prepare("SELECT id,nome,email,papel,senha_hash FROM usuarios WHERE email=? AND status='ativo'").bind(email).first<any>();
    if(!account?.senha_hash||!await verify(password,account.senha_hash)){await e.DB.prepare("INSERT INTO tentativas_login(id,chave,ocorreu_em) VALUES(?,?,?)").bind(crypto.randomUUID(),key,now).run();return json({error:"E-mail ou senha inválidos"},401,h)}
    await e.DB.prepare("DELETE FROM tentativas_login WHERE chave=?").bind(key).run();
-   const token=random(),expires=new Date(Date.now()+TTL*1000).toISOString();
+   const token=random(),expires=new Date(Date.now()+TTL*1000).toISOString().slice(0,19).replace("T"," ");
    await e.DB.prepare("INSERT INTO sessoes(id,usuario_id,token_hash,expira_em) VALUES(?,?,?,?)").bind(crypto.randomUUID(),account.id,await sha(token),expires).run();
    await audit(e,account.id,"login","sessao");return json({user:{id:account.id,nome:account.nome,email:account.email,papel:account.papel}},200,{...Object.fromEntries(h),"Set-Cookie":cookie(token,TTL)})
   }catch{return json({error:"Não foi possível realizar o login"},400,h)}
