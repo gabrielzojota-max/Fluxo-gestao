@@ -19,3 +19,5 @@ Sistema de gestão da FLUXO Estética Automotiva.
 `npm install` e `npm run dev`.
 
 A migration inicial está em `migrations/0001_initial.sql`. Ela já foi aplicada no banco D1 existente.
+## Hospedagem
+Frontend preparado para publicação no Cloudflare Pages; API no Cloudflare Workers.
