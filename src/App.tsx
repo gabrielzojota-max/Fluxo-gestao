@@ -1,7 +1,7 @@
 import {useEffect,useState,type FormEvent} from "react";
 import {LayoutDashboard,CalendarDays,Users,Wallet,Package,Images,ChartNoAxesCombined,Settings,Menu,Bell,Plus,CarFront,ArrowUpRight,Clock3,LogOut,LockKeyhole,Mail,Eye,EyeOff,ShieldCheck} from "lucide-react";
 
-const API="https://fluxo-gestao-api.equipe-rec.workers.dev";
+const API="";
 const nav=[[ "Painel",LayoutDashboard ],[ "Atendimentos",CalendarDays ],[ "Clientes",Users ],[ "Financeiro",Wallet ],[ "Estoque",Package ],[ "Galeria",Images ],[ "Relatórios",ChartNoAxesCombined ],[ "Equipe e configurações",Settings ]] as const;
 type User={id:string;nome:string;email:string;papel:string};
 async function api(path:string,body?:unknown,token?:string){const headers:Record<string,string>={};if(body)headers["Content-Type"]="application/json";if(token)headers["Authorization"]="Bearer "+token;const r=await fetch(API+path,{method:body?"POST":"GET",credentials:"include",headers:Object.keys(headers).length?headers:undefined,body:body?JSON.stringify(body):undefined});const data=await r.json().catch(()=>({error:"Resposta inválida do servidor"}));if(!r.ok)throw new Error(data.error||"Não foi possível concluir a solicitação");return data}
