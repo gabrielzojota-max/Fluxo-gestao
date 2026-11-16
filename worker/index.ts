@@ -28,7 +28,7 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
    if(data.some(x=>x.nome.length<2||x.nome.length>100||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x.email)||x.senha.length<8||x.senha.length>128)||(data.length===2&&data[0].email===data[1].email))return json({error:"Confira nomes, e-mails diferentes e senhas de 8 a 128 caracteres"},400,h);
    await e.DB.batch(await Promise.all(data.map(async x=>e.DB.prepare("INSERT INTO usuarios(id,nome,email,senha_hash,papel,status) VALUES(?,?,?,?,'socio','ativo')").bind(crypto.randomUUID(),x.nome,x.email,await hashPassword(x.senha)))));
    await audit(e,null,"configuracao_inicial","usuarios");return json({status:"configured",ownersCreated:data.length},201,h)
-  }catch{return json({error:"Não foi possível concluir a configuração inicial"},400,h)}
+  }catch(error){console.error("auth_setup_error",{name:error instanceof Error?error.name:"UnknownError",message:error instanceof Error?error.message:"Unknown error"});return json({error:"Não foi possível concluir a configuração inicial",reference:"auth_setup_error"},500,h)}
  }
  if(r.method==="POST"&&u.pathname==="/api/auth/login"){
   try{const b=await body(r),email=String(b.email??"").trim().toLowerCase(),password=String(b.senha??""),ip=r.headers.get("CF-Connecting-IP")??"unknown",key=await sha(email+"|"+ip),now=Math.floor(Date.now()/1000);
@@ -41,7 +41,7 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
    const token=random(),expires=new Date(Date.now()+TTL*1000).toISOString().slice(0,19).replace("T"," ");
    await e.DB.prepare("INSERT INTO sessoes(id,usuario_id,token_hash,expira_em) VALUES(?,?,?,?)").bind(crypto.randomUUID(),account.id,await sha(token),expires).run();
    await audit(e,account.id,"login","sessao");return json({user:{id:account.id,nome:account.nome,email:account.email,papel:account.papel}},200,{...Object.fromEntries(h),"Set-Cookie":cookie(token,TTL)})
-  }catch{return json({error:"Não foi possível realizar o login"},400,h)}
+  }catch(error){console.error("auth_login_error",{name:error instanceof Error?error.name:"UnknownError",message:error instanceof Error?error.message:"Unknown error"});return json({error:"Não foi possível realizar o login",reference:"auth_login_error"},500,h)}
  }
  if(r.method==="GET"&&u.pathname==="/api/auth/me"){const x=await userFrom(r,e);return x?json({user:x},200,h):json({user:null},401,h)}
  if(r.method==="POST"&&u.pathname==="/api/auth/logout"){const t=getCookie(r);if(t)await e.DB.prepare("UPDATE sessoes SET revogada_em=datetime('now') WHERE token_hash=? AND revogada_em IS NULL").bind(await sha(t)).run();return json({status:"logged_out"},200,{...Object.fromEntries(h),"Set-Cookie":cookie("",0)})}
