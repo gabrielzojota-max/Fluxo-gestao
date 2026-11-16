@@ -81,6 +81,34 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
   ]);
   return json({cliente:client,veiculos:vehicles.results??[],historico:history.results??[]},200,h)
  }
+  if(r.method==="GET"&&u.pathname==="/api/estoque"){
+  const [products,movements]=await Promise.all([
+   e.DB.prepare("SELECT id,nome,unidade,quantidade,estoque_minimo,custo_unitario_centavos,ativo,CASE WHEN quantidade<=0 THEN 'zerado' WHEN quantidade<=estoque_minimo THEN 'baixo' ELSE 'ok' END status FROM produtos WHERE ativo=1 ORDER BY nome").all<any>(),
+   e.DB.prepare("SELECT m.id,m.produto_id,m.tipo,m.quantidade,m.custo_unitario_centavos,m.motivo,m.criado_em,p.nome produto,p.unidade FROM movimentacoes_estoque m JOIN produtos p ON p.id=m.produto_id ORDER BY m.criado_em DESC LIMIT 100").all<any>()
+  ]);
+  const rows=products.results??[];
+  return json({produtos:rows,movimentacoes:movements.results??[],resumo:{produtos:rows.length,baixo:rows.filter((p:any)=>p.status==='baixo').length,zerado:rows.filter((p:any)=>p.status==='zerado').length,unidades:rows.reduce((n:number,p:any)=>n+Number(p.quantidade||0),0)}},200,h)
+ }
+ if(r.method==="POST"&&u.pathname==="/api/estoque/produtos"){
+  try{const b=await body(r),nome=String(b.nome??"").trim(),unidade=String(b.unidade??"un"),minimo=Number(b.estoque_minimo??0),custo=Math.round(Number(b.custo_unitario_reais??0)*100);
+   if(nome.length<2||nome.length>120||!["un","ml","L","g","kg","pacote","frasco"].includes(unidade)||!Number.isFinite(minimo)||minimo<0||minimo>1000000||!Number.isSafeInteger(custo)||custo<0||custo>100000000)return json({error:"Confira nome, unidade, estoque mínimo e custo do produto."},400,h);
+   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO produtos(id,nome,unidade,quantidade,estoque_minimo,custo_unitario_centavos,ativo) VALUES(?,?,?,0,?,?,1)").bind(id,nome,unidade,minimo,custo).run();
+   await audit(e,(current as any).id,"produto_estoque_criado","produtos");return json({id,nome},201,h)
+  }catch(error){console.error("stock_product_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível cadastrar o produto."},500,h)}
+ }
+ if(r.method==="POST"&&u.pathname==="/api/estoque/movimentacoes"){
+  try{const b=await body(r),produtoId=String(b.produto_id??""),tipo=String(b.tipo??""),quantidade=Number(b.quantidade),motivo=String(b.motivo??"").trim(),custo=b.custo_unitario_reais===""||b.custo_unitario_reais==null?null:Math.round(Number(b.custo_unitario_reais)*100);
+   if(!produtoId||!["compra","consumo","perda"].includes(tipo)||!Number.isFinite(quantidade)||quantidade<=0||quantidade>1000000||motivo.length<2||motivo.length>240||(custo!==null&&(!Number.isSafeInteger(custo)||custo<0||custo>100000000)))return json({error:"Confira produto, tipo, quantidade e motivo da movimentação."},400,h);
+   const product=await e.DB.prepare("SELECT id,quantidade FROM produtos WHERE id=? AND ativo=1").bind(produtoId).first<any>();if(!product)return json({error:"Produto não encontrado."},404,h);
+   if(tipo!=="compra"&&Number(product.quantidade)<quantidade)return json({error:"Estoque insuficiente para essa saída."},409,h);
+   const update=tipo==="compra"
+    ?e.DB.prepare("UPDATE produtos SET quantidade=quantidade+?,custo_unitario_centavos=COALESCE(?,custo_unitario_centavos) WHERE id=? AND ativo=1").bind(quantidade,custo,produtoId)
+    :e.DB.prepare("UPDATE produtos SET quantidade=quantidade-? WHERE id=? AND ativo=1 AND quantidade>=?").bind(quantidade,produtoId,quantidade);
+   const changed=await update.run();if(!changed.meta.changes)return json({error:"O estoque mudou. Atualize a tela e tente novamente."},409,h);
+   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO movimentacoes_estoque(id,produto_id,tipo,quantidade,custo_unitario_centavos,motivo,criado_por) VALUES(?,?,?,?,?,?,?)").bind(id,produtoId,tipo,quantidade,custo,motivo,(current as any).id).run();
+   await audit(e,(current as any).id,"movimentacao_estoque_"+tipo,"movimentacoes_estoque");return json({id,status:"registrado"},201,h)
+  }catch(error){console.error("stock_movement_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível registrar a movimentação."},500,h)}
+ }
   if(r.method==="GET"&&u.pathname==="/api/financeiro"){
   const [payments,open]=await Promise.all([
    e.DB.prepare("SELECT p.id,p.atendimento_id,p.valor_centavos,p.metodo,p.status,p.recebido_em,p.criado_em,c.nome cliente,COALESCE(v.modelo,'') veiculo,a.data_hora FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY CASE p.status WHEN 'pendente' THEN 0 ELSE 1 END,p.criado_em DESC LIMIT 150").all<any>(),
