@@ -132,7 +132,27 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
  await audit(e,current.id,"despesa_paga","despesas");return json({status:"paga"},200,h)
  }catch(error){console.error("expense_pay_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível dar baixa na despesa."},500,h)}
  }
- if(r.method==="GET"&&u.pathname==="/api/financeiro"){
+ if(r.method==="GET"&&u.pathname==="/api/relatorios"){
+ const inicio=u.searchParams.get("inicio")??"",fim=u.searchParams.get("fim")??"",valid=(v:string)=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+"T00:00:00Z"));
+ if(!valid(inicio)||!valid(fim)||inicio>fim)return json({error:"Informe um período válido."},400,h);
+ const a=Date.parse(inicio+"T00:00:00Z"),b=Date.parse(fim+"T00:00:00Z"),days=Math.round((b-a)/86400000)+1;
+ if(days>366)return json({error:"O período máximo é de 366 dias."},400,h);
+ const prevEnd=new Date(a-86400000).toISOString().slice(0,10),prevStart=new Date(a-days*86400000).toISOString().slice(0,10);
+ const [rev,cost,ats,svc,revDays,costDays,prevRev,prevCost,prevAts]=await Promise.all([
+ e.DB.prepare("SELECT COALESCE(SUM(valor_centavos),0) total,COUNT(*) quantidade FROM pagamentos WHERE status='recebido' AND substr(COALESCE(recebido_em,criado_em),1,10) BETWEEN ? AND ?").bind(inicio,fim).first<any>(),
+ e.DB.prepare("SELECT COALESCE(SUM(valor_centavos),0) total,COUNT(*) quantidade FROM despesas WHERE status='paga' AND substr(COALESCE(pago_em,criado_em),1,10) BETWEEN ? AND ?").bind(inicio,fim).first<any>(),
+ e.DB.prepare("SELECT COUNT(CASE WHEN status='concluido' THEN 1 END) concluidos,COALESCE(SUM(CASE WHEN status='concluido' THEN valor_centavos ELSE 0 END),0) valor_servicos,COUNT(CASE WHEN status='cancelado' THEN 1 END) cancelados,COUNT(*) total FROM atendimentos WHERE substr(data_hora,1,10) BETWEEN ? AND ?").bind(inicio,fim).first<any>(),
+ e.DB.prepare("SELECT s.descricao nome,COUNT(*) quantidade,COALESCE(SUM(s.valor_centavos),0) total_centavos FROM atendimento_servicos s JOIN atendimentos a ON a.id=s.atendimento_id WHERE a.status='concluido' AND substr(a.data_hora,1,10) BETWEEN ? AND ? GROUP BY s.descricao ORDER BY total_centavos DESC LIMIT 12").bind(inicio,fim).all<any>(),
+ e.DB.prepare("SELECT substr(COALESCE(recebido_em,criado_em),1,10) dia,SUM(valor_centavos) total FROM pagamentos WHERE status='recebido' AND substr(COALESCE(recebido_em,criado_em),1,10) BETWEEN ? AND ? GROUP BY dia ORDER BY dia").bind(inicio,fim).all<any>(),
+ e.DB.prepare("SELECT substr(COALESCE(pago_em,criado_em),1,10) dia,SUM(valor_centavos) total FROM despesas WHERE status='paga' AND substr(COALESCE(pago_em,criado_em),1,10) BETWEEN ? AND ? GROUP BY dia ORDER BY dia").bind(inicio,fim).all<any>(),
+ e.DB.prepare("SELECT COALESCE(SUM(valor_centavos),0) total FROM pagamentos WHERE status='recebido' AND substr(COALESCE(recebido_em,criado_em),1,10) BETWEEN ? AND ?").bind(prevStart,prevEnd).first<any>(),
+ e.DB.prepare("SELECT COALESCE(SUM(valor_centavos),0) total FROM despesas WHERE status='paga' AND substr(COALESCE(pago_em,criado_em),1,10) BETWEEN ? AND ?").bind(prevStart,prevEnd).first<any>(),
+ e.DB.prepare("SELECT COUNT(*) concluidos FROM atendimentos WHERE status='concluido' AND substr(data_hora,1,10) BETWEEN ? AND ?").bind(prevStart,prevEnd).first<any>()
+ ]);
+ const R=Number(rev?.total??0),C=Number(cost?.total??0),PR=Number(prevRev?.total??0),PC=Number(prevCost?.total??0),N=Number(ats?.concluidos??0),PN=Number(prevAts?.concluidos??0),pct=(x:number,y:number)=>y===0?(x===0?0:null):Math.round((x-y)/y*1000)/10;
+ return json({periodo:{inicio,fim,dias:days,comparacao_inicio:prevStart,comparacao_fim:prevEnd},totais:{receita_centavos:R,despesas_centavos:C,resultado_centavos:R-C,atendimentos_concluidos:N,ticket_medio_centavos:N?Math.round(Number(ats?.valor_servicos??0)/N):0,pagamentos:rev?.quantidade??0,despesas_pagas:cost?.quantidade??0,total_atendimentos:ats?.total??0,cancelados:ats?.cancelados??0},comparacao:{receita_centavos:PR,despesas_centavos:PC,resultado_centavos:PR-PC,atendimentos_concluidos:PN,receita_delta_pct:pct(R,PR),despesas_delta_pct:pct(C,PC),resultado_delta_pct:pct(R-C,PR-PC),atendimentos_delta_pct:pct(N,PN)},servicos:svc.results??[],receita_por_dia:revDays.results??[],despesas_por_dia:costDays.results??[]},200,h)
+ }
+if(r.method==="GET"&&u.pathname==="/api/financeiro"){
   const [payments,open]=await Promise.all([
    e.DB.prepare("SELECT p.id,p.atendimento_id,p.valor_centavos,p.metodo,p.modalidade,p.status,p.recebido_em,p.criado_em,c.nome cliente,COALESCE(v.modelo,'') veiculo,a.data_hora FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY CASE p.status WHEN 'pendente' THEN 0 ELSE 1 END,p.criado_em DESC LIMIT 150").all<any>(),
    e.DB.prepare("SELECT a.id,a.data_hora,a.valor_centavos,c.nome cliente,COALESCE(v.modelo,'') veiculo,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,MAX(0,a.valor_centavos-COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0)) saldo_centavos FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.status<>'cancelado' AND a.valor_centavos>COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0) ORDER BY a.data_hora DESC LIMIT 100").all<any>()
