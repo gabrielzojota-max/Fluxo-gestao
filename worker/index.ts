@@ -61,7 +61,7 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
  }
  if(r.method==="GET"&&u.pathname==="/api/clientes"){
   const q=(u.searchParams.get("q")??"").trim();
-  const rows=await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos FROM clientes c WHERE (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q,q,q).all<any>();
+  const rows=await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos FROM clientes c WHERE (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q,q,q).all<any>();
   return json({clientes:rows.results??[]},200,h)
  }
  if(r.method==="POST"&&u.pathname==="/api/clientes"){
@@ -84,7 +84,7 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
   if(r.method==="GET"&&u.pathname==="/api/financeiro"){
   const [payments,open]=await Promise.all([
    e.DB.prepare("SELECT p.id,p.atendimento_id,p.valor_centavos,p.metodo,p.status,p.recebido_em,p.criado_em,c.nome cliente,COALESCE(v.modelo,'') veiculo,a.data_hora FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY CASE p.status WHEN 'pendente' THEN 0 ELSE 1 END,p.criado_em DESC LIMIT 150").all<any>(),
-   e.DB.prepare("SELECT a.id,a.data_hora,a.valor_centavos,c.nome cliente,COALESCE(v.modelo,'') veiculo,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,MAX(0,a.valor_centavos-COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0)) saldo_centavos FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.status<>'cancelado' AND a.valor_centavos>COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) ORDER BY a.data_hora DESC LIMIT 100").all<any>()
+   e.DB.prepare("SELECT a.id,a.data_hora,a.valor_centavos,c.nome cliente,COALESCE(v.modelo,'') veiculo,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,MAX(0,a.valor_centavos-COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0)) saldo_centavos FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.status<>'cancelado' AND a.valor_centavos>COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0) ORDER BY a.data_hora DESC LIMIT 100").all<any>()
   ]);
   const totals=await e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN status='recebido' THEN valor_centavos ELSE 0 END),0) recebido_centavos,COALESCE(SUM(CASE WHEN status='pendente' THEN valor_centavos ELSE 0 END),0) pendente_centavos,COUNT(CASE WHEN status='recebido' THEN 1 END) recebidos,COUNT(CASE WHEN status='pendente' THEN 1 END) pendentes FROM pagamentos").first<any>();
   return json({pagamentos:payments.results??[],em_aberto:open.results??[],totais:totals},200,h)
@@ -92,9 +92,9 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
  if(r.method==="POST"&&u.pathname==="/api/pagamentos"){
   try{const b=await body(r),atendimentoId=String(b.atendimento_id??""),valor=Math.round(Number(b.valor_reais??0)*100),metodo=String(b.metodo??"");
    if(!atendimentoId||!Number.isSafeInteger(valor)||valor<=0||valor>100000000||!["dinheiro","pix","cartao","outro"].includes(metodo))return json({error:"Informe atendimento, valor válido e forma de pagamento."},400,h);
-   const at=await e.DB.prepare("SELECT a.id,a.valor_centavos,a.status,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido FROM atendimentos a WHERE a.id=?").bind(atendimentoId).first<any>();
+   const at=await e.DB.prepare("SELECT a.id,a.valor_centavos,a.status,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0) comprometido FROM atendimentos a WHERE a.id=?").bind(atendimentoId).first<any>();
    if(!at||at.status==="cancelado")return json({error:"Atendimento não encontrado ou cancelado."},404,h);
-   const saldo=Math.max(0,Number(at.valor_centavos)-Number(at.recebido));if(valor>saldo)return json({error:"O valor informado é maior que o saldo em aberto."},400,h);
+   const saldo=Math.max(0,Number(at.valor_centavos)-Number(at.comprometido));if(valor>saldo)return json({error:"O valor informado é maior que o saldo em aberto."},400,h);
    const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO pagamentos(id,atendimento_id,valor_centavos,metodo,status,criado_por) VALUES(?,?,?,?,'pendente',?)").bind(id,atendimentoId,valor,metodo,(current as any).id).run();
    await audit(e,(current as any).id,"pagamento_pendente_criado","pagamentos");return json({id,status:"pendente"},201,h)
   }catch(error){console.error("payment_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível registrar o pagamento."},500,h)}
