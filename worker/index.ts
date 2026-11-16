@@ -50,17 +50,23 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
  const current=await userFrom(r,e);
  if(u.pathname.startsWith("/api/")&&u.pathname!=="/api/health"&&u.pathname!=="/api/auth/me"&&u.pathname!=="/api/auth/login-info"&&u.pathname.startsWith("/api/")&&!u.pathname.startsWith("/api/auth/")&&!current)return json({error:"Sessão expirada. Entre novamente."},401,h);
  if(r.method==="GET"&&u.pathname==="/api/dashboard"){
-  const [clients,appointments,today,revenue,openAppointments,services]=await Promise.all([
-   e.DB.prepare("SELECT COUNT(*) total FROM clientes").first<any>(),
-   e.DB.prepare("SELECT COUNT(*) total FROM atendimentos").first<any>(),
-   e.DB.prepare("SELECT COUNT(*) total FROM atendimentos WHERE substr(data_hora,1,10)=date('now','-3 hours') AND status<>'cancelado'").first<any>(),
-   e.DB.prepare("SELECT COALESCE(SUM(valor_centavos),0) total FROM pagamentos WHERE status='recebido' AND substr(COALESCE(recebido_em,criado_em),1,7)=strftime('%Y-%m','now','-3 hours')").first<any>(),
-   e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.valor_centavos,c.nome cliente,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.status IN('agendado','em_andamento') ORDER BY a.data_hora LIMIT 6").all<any>(),
-   e.DB.prepare("SELECT COUNT(*) total FROM catalogo_servicos WHERE ativo=1").first<any>()
-  ]);
-  return json({clientes:clients?.total??0,atendimentos:appointments?.total??0,hoje:today?.total??0,faturamento_centavos:revenue?.total??0,servicos:services?.total??0,proximos:openAppointments.results??[]},200,h)
- }
- if(r.method==="GET"&&u.pathname==="/api/clientes"){
+   const [clients,appointments,today,revenue,monthExpenses,weekRevenue,weekExpenses,prevWeekRevenue,prevWeekExpenses,openAppointments,services]=await Promise.all([
+    e.DB.prepare("SELECT COUNT(*) total FROM clientes").first<any>(),
+    e.DB.prepare("SELECT COUNT(*) total FROM atendimentos").first<any>(),
+    e.DB.prepare("SELECT COUNT(*) total,COUNT(CASE WHEN status='agendado' THEN 1 END) agendados,COUNT(CASE WHEN status='em_andamento' THEN 1 END) em_andamento,COUNT(CASE WHEN status='concluido' THEN 1 END) concluidos,COUNT(CASE WHEN status='cancelado' THEN 1 END) cancelados FROM atendimentos WHERE substr(data_hora,1,10)=date('now','-3 hours')").first<any>(),
+    e.DB.prepare("SELECT COALESCE(SUM(valor_centavos),0) bruto,COALESCE(SUM(taxa_centavos),0) taxas,COALESCE(SUM(COALESCE(liquido_centavos,valor_centavos)),0) liquido FROM pagamentos WHERE status='recebido' AND substr(COALESCE(recebido_em,criado_em),1,7)=strftime('%Y-%m','now','-3 hours')").first<any>(),
+    e.DB.prepare("SELECT COALESCE(SUM(valor_centavos),0) total FROM despesas WHERE status='paga' AND substr(COALESCE(pago_em,criado_em),1,7)=strftime('%Y-%m','now','-3 hours')").first<any>(),
+    e.DB.prepare("SELECT COALESCE(SUM(COALESCE(liquido_centavos,valor_centavos)),0) total FROM pagamentos WHERE status='recebido' AND date(COALESCE(recebido_em,criado_em)) BETWEEN date('now','-3 hours','weekday 0','-6 days') AND date('now','-3 hours')").first<any>(),
+    e.DB.prepare("SELECT COALESCE(SUM(valor_centavos),0) total FROM despesas WHERE status='paga' AND date(COALESCE(pago_em,criado_em)) BETWEEN date('now','-3 hours','weekday 0','-6 days') AND date('now','-3 hours')").first<any>(),
+    e.DB.prepare("SELECT COALESCE(SUM(COALESCE(liquido_centavos,valor_centavos)),0) total FROM pagamentos WHERE status='recebido' AND date(COALESCE(recebido_em,criado_em)) BETWEEN date('now','-3 hours','weekday 0','-13 days') AND date('now','-3 hours','weekday 0','-7 days')").first<any>(),
+    e.DB.prepare("SELECT COALESCE(SUM(valor_centavos),0) total FROM despesas WHERE status='paga' AND date(COALESCE(pago_em,criado_em)) BETWEEN date('now','-3 hours','weekday 0','-13 days') AND date('now','-3 hours','weekday 0','-7 days')").first<any>(),
+    e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.valor_centavos,c.nome cliente,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.status IN('agendado','em_andamento') ORDER BY a.data_hora LIMIT 6").all<any>(),
+    e.DB.prepare("SELECT COUNT(*) total FROM catalogo_servicos WHERE ativo=1").first<any>()
+   ]);
+   const monthNet=Number(revenue?.liquido??0),monthCost=Number(monthExpenses?.total??0),weekNet=Number(weekRevenue?.total??0),weekCost=Number(weekExpenses?.total??0),prevNet=Number(prevWeekRevenue?.total??0),prevCost=Number(prevWeekExpenses?.total??0),pct=(x:number,y:number)=>y===0?(x===0?0:null):Math.round((x-y)/y*1000)/10;
+   return json({clientes:clients?.total??0,atendimentos:appointments?.total??0,hoje:today?.total??0,hoje_status:{agendados:today?.agendados??0,em_andamento:today?.em_andamento??0,concluidos:today?.concluidos??0,cancelados:today?.cancelados??0},faturamento_bruto_centavos:revenue?.bruto??0,taxas_cartao_centavos:revenue?.taxas??0,faturamento_centavos:monthNet,despesas_mes_centavos:monthCost,resultado_mes_centavos:monthNet-monthCost,semana:{receita_liquida_centavos:weekNet,despesas_centavos:weekCost,resultado_centavos:weekNet-weekCost,receita_anterior_centavos:prevNet,resultado_anterior_centavos:prevNet-prevCost,receita_delta_pct:pct(weekNet,prevNet),resultado_delta_pct:pct(weekNet-weekCost,prevNet-prevCost)},servicos:services?.total??0,proximos:openAppointments.results??[]},200,h)
+  }
+  if(r.method==="GET"&&u.pathname==="/api/clientes"){
   const q=(u.searchParams.get("q")??"").trim();
   const rows=await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos FROM clientes c WHERE (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q,q,q).all<any>();
   return json({clientes:rows.results??[]},200,h)
