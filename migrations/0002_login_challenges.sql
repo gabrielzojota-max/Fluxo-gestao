@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS login_challenges(id TEXT PRIMARY KEY,email TEXT NOT NULL COLLATE NOCASE,nonce_hash TEXT NOT NULL,expires_at INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS idx_login_challenges_email_expiry ON login_challenges(email,expires_at);
