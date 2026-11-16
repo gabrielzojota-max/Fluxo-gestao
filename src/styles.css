@@ -1382,3 +1382,18 @@ section{max-width:1600px;padding:38px clamp(22px,3.6vw,56px) 64px}
 .payment-preview b{color:#dce8d9;font-weight:700}
 .payment-preview strong{color:#d7f0b4;font:800 14px Manrope}
 @media(max-width:700px){.payment-fees-panel{padding:15px}.payment-fees-form{display:grid;grid-template-columns:1fr 1fr;gap:9px}.payment-fees-form button,.payment-fees-form>small{grid-column:1/-1}.payment-fees-form input{min-height:46px;font-size:16px}.payment-preview{min-width:0}.payment-preview span{font-size:10px}}
+
+
+/* Taxas de cartão e prévia do valor líquido */
+.payment-fees-panel{padding:19px}
+.payment-fees-form{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:10px 0}
+.payment-fees-form>div{display:grid;gap:6px;min-width:130px;flex:1}
+.payment-fees-form label{font-size:11px;color:#b6c4b7}
+.payment-fees-form input{width:100%;min-height:42px;padding:10px 12px;background:#0b130e;border:1px solid #3b5140;border-radius:9px;color:#eef5ed;font:14px 'DM Sans',sans-serif}
+.payment-fees-form button{min-height:42px}
+.payment-fees-note{font-size:10px;color:#91a093;line-height:1.5}
+.payment-preview{grid-column:1/-1;display:grid;gap:7px;min-width:100%;padding:11px 12px;border:1px solid #344b38;border-radius:10px;background:#0b140e}
+.payment-preview span{display:flex;justify-content:space-between;gap:12px;color:#9eae9f;font-size:11px}
+.payment-preview b{color:#dce8d9;font-weight:700}
+.payment-preview strong{color:#d7f0b4;font:800 14px Manrope}
+@media(max-width:700px){.payment-fees-panel{padding:15px}.payment-fees-form{display:grid;grid-template-columns:1fr 1fr;gap:9px}.payment-fees-form button,.payment-fees-form>small{grid-column:1/-1}.payment-fees-form input{min-height:46px;font-size:16px}.payment-preview{min-width:0}.payment-preview span{font-size:10px}}
