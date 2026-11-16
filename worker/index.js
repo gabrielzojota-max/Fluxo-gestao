@@ -214,7 +214,7 @@ export default { async fetch(r, e) {
         if (r.method === "GET" && u.pathname === "/api/despesas") {
             const rows = await e.DB.prepare("SELECT id,categoria,descricao,valor_centavos,vencimento,status,metodo,pago_em,criado_em FROM despesas WHERE status<>'cancelada' ORDER BY CASE status WHEN 'pendente' THEN 0 ELSE 1 END,COALESCE(vencimento,criado_em) DESC LIMIT 300").all();
             const totals = await e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN status='paga' THEN valor_centavos ELSE 0 END),0) pagas_centavos,COALESCE(SUM(CASE WHEN status='pendente' THEN valor_centavos ELSE 0 END),0) pendentes_centavos FROM despesas").first();
-            return json({ despesas: rows.results ?? [], totais }, 200, h);
+            return json({ despesas: rows.results ?? [], totais: totals }, 200, h);
         }
         if (r.method === "POST" && u.pathname === "/api/despesas") {
             try {
