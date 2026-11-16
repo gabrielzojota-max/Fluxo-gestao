@@ -1225,3 +1225,39 @@ section{max-width:1600px;padding:38px clamp(22px,3.6vw,56px) 64px}
  .expense-heading h2{font-size:19px}
  .expense-grid .form-card{padding:16px}
 }
+
+
+/* FLUXO · Relatórios: leitura rápida e comparação */
+.report-cards{grid-template-columns:repeat(5,minmax(0,1fr));}
+.report-cards article{display:flex;flex-direction:column;justify-content:space-between;gap:9px;min-width:0;}
+.report-cards article strong{font-size:clamp(19px,2vw,27px);letter-spacing:-.8px;overflow-wrap:anywhere;}
+.report-cards article span{line-height:1.45;}
+.report-comparison .comparison-grid>div{min-width:0;padding:14px;border:1px solid #2d4032;border-radius:12px;background:#0d1510;}
+.report-comparison .comparison-grid>div b{display:block;margin:7px 0;font-size:clamp(16px,1.8vw,21px);overflow-wrap:anywhere;}
+.report-comparison .comparison-grid>div span{display:block;color:#9aaa9c;font-size:11px;line-height:1.45;}
+.report-day-positive{color:#b8e77b!important;font-weight:800;}
+.report-day-negative{color:#ff9b8d!important;font-weight:800;}
+.report-bars{gap:12px;}
+.report-bar-row{gap:10px;}
+.report-bar-row>small:first-child{width:38px;flex:0 0 38px;}
+.report-bar-row>small:last-child{width:104px;flex:0 0 104px;text-align:right;font-variant-numeric:tabular-nums;}
+@media(max-width:900px){.report-cards{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:700px){
+ .reports-page{gap:13px;}
+ .report-toolbar{align-items:flex-start;flex-direction:column;}
+ .report-export{width:100%;min-height:46px;}
+ .report-period{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+ .report-period .report-presets{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));}
+ .report-period .report-presets button{padding:9px 4px;font-size:10px;}
+ .report-period label{min-width:0;font-size:10px;}
+ .report-period input{width:100%;min-width:0;}
+ .report-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
+ .report-cards article{padding:13px;min-height:112px;}
+ .report-cards article strong{font-size:19px;}
+ .report-cards article small{font-size:10px;}
+ .report-cards article span{font-size:9px;}
+ .report-comparison .comparison-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+ .report-comparison .comparison-grid>div{padding:11px;}
+ .report-bar-row>small:last-child{width:88px;flex-basis:88px;font-size:9px;}
+ .report-bar-row .bar-pair{min-width:0;}
+}
