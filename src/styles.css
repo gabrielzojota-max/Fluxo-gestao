@@ -1399,3 +1399,13 @@ section{max-width:1600px;padding:38px clamp(22px,3.6vw,56px) 64px}
 @media(max-width:700px){.payment-fees-panel{padding:15px}.payment-fees-form{display:grid;grid-template-columns:1fr 1fr;gap:9px}.payment-fees-form button,.payment-fees-form>small{grid-column:1/-1}.payment-fees-form input{min-height:46px;font-size:16px}.payment-preview{min-width:0}.payment-preview span{font-size:10px}}
 
 .page-success{margin:0 0 18px;padding:12px 15px;border:1px solid #48683c;background:#1d3020;color:#d3efb6;border-radius:9px;font-size:12px}
+
+/* Relatórios financeiros: separar bruto, taxas, líquido e resultado */
+.report-cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+.report-cards article{min-width:0}
+.report-cards article:nth-child(2) strong{color:#e2bd8c}
+.report-cards article:nth-child(3) strong{color:#d8efbd}
+.report-cards article.positive strong{color:#b9e58f}
+.report-cards article.negative strong{color:#f0a2a2}
+@media(max-width:900px){.report-cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.report-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.report-cards article{padding:12px 10px}.report-cards article strong{font-size:17px}.report-cards article span{font-size:9px}}
