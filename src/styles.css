@@ -90,3 +90,63 @@ section{padding:42px clamp(20px,3vw,48px)}
 .payment-state{max-width:220px}.payment-state .status{font-size:9px}.confirm-payment:disabled{opacity:.5;cursor:wait}
 @media(max-width:950px){.profile-columns{grid-template-columns:1fr}.profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.profile-hero{padding:17px;gap:12px;flex-wrap:wrap}.profile-avatar{width:45px;height:45px}.profile-main h2{font-size:19px}.profile-spend{width:100%;padding:12px 0 0;border-left:0;border-top:1px solid #405441;text-align:left}.profile-spend strong{font-size:20px}.profile-since{font-size:9px}.finance-summary{grid-template-columns:1fr}.finance-summary article{padding:15px}.finance-due,.payment-row{grid-template-columns:1fr}.due-action,.payment-state{align-items:flex-start;max-width:none}.payment-form{display:grid;grid-template-columns:1fr}.payment-form>div{min-width:0}.profile-stats{gap:8px}.profile-stats article{padding:13px}.profile-stats strong{font-size:16px}.history-row{gap:7px}.history-value strong{font-size:11px}}
+
+
+/* Customer, vehicle and appointment detail improvements */
+.vehicle-profile{align-items:center;flex-wrap:wrap}
+.vehicle-open{display:flex;align-items:center;gap:11px;min-width:0;flex:1;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.vehicle-open>span{display:grid;gap:4px;min-width:0}
+.vehicle-open b{font-size:12px;color:#eaf0eb}
+.vehicle-open small{font-size:10px;color:#91a093;line-height:1.4}
+.vehicle-thumb{width:72px;height:54px;flex:none;object-fit:cover;border:1px solid #405640;border-radius:9px;background:#0d140f}
+.vehicle-action{color:#bce88a!important}
+.photo-upload{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:8px 11px;border:1px solid #49623f;border-radius:8px;background:#1b2b1e;color:#c9ed9b;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap}
+.photo-upload input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.photo-upload-large{margin-top:15px;min-height:44px}
+.photo-preview{display:flex;align-items:center;gap:12px;margin:4px 0 8px}
+.photo-preview img{width:120px;height:82px;object-fit:cover;border-radius:9px;border:1px solid #405640}
+.vehicle-open-list{width:100%}
+.appointment-open{display:grid;gap:5px;min-width:0;flex:1;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.appointment-open b{font-size:12px;color:#eaf0eb}
+.appointment-open small{font-size:10px;color:#91a093;line-height:1.4}
+.appointment-open:hover b,.vehicle-open:hover b{color:#c6ed91}
+.appointment-filters{display:flex;gap:7px;flex-wrap:wrap}
+.appointment-filters span{padding:6px 9px;border-radius:20px;background:#223326;color:#c5e99a;font-size:10px}
+.schedule-field{display:grid;gap:8px}
+.schedule-total{grid-column:1/-1;display:grid;gap:4px;padding:13px 15px;border:1px solid #3b523e;border-radius:10px;background:linear-gradient(120deg,#1c2b1e,#121a15)}
+.schedule-total span,.schedule-total small{font-size:10px;color:#a7b5a8}
+.schedule-total strong{font:800 21px Manrope;color:#d5efb4}
+.schedule-submit{min-height:46px;width:100%;justify-content:center}
+.modal-backdrop{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:18px;background:#050906d9;backdrop-filter:blur(5px)}
+.detail-modal{width:min(560px,100%);max-height:min(88vh,820px);overflow:auto;padding:22px;border:1px solid #3b523e;border-radius:16px;background:#121a15;box-shadow:0 24px 80px #0009}
+.modal-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
+.modal-heading label{font-size:9px;letter-spacing:1.1px;color:#a9d979;font-weight:800}
+.modal-heading h2{margin:6px 0 0;font:800 21px Manrope;color:#eef5ec}
+.modal-close{width:38px;height:38px;border:1px solid #3a4b3c;border-radius:10px;background:#1c2a20;color:#dbe8dc;font-size:24px;cursor:pointer}
+.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.detail-grid>div{display:grid;gap:6px;min-width:0;padding:12px;border:1px solid #2b3c30;border-radius:10px;background:#0f1711}
+.detail-grid small,.detail-notes small{font-size:9px;color:#93a295;text-transform:uppercase;letter-spacing:.5px}
+.detail-grid b{font-size:12px;color:#e8f0e8;overflow-wrap:anywhere}
+.detail-notes{margin-top:12px;padding:13px;border:1px solid #2b3c30;border-radius:10px}
+.detail-notes p{margin:7px 0 0;color:#d4dfd5;font-size:12px;line-height:1.6;white-space:pre-wrap}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}
+.modal-actions .primary{min-height:42px}
+.vehicle-detail-photo{width:100%;max-height:260px;object-fit:cover;border-radius:12px;border:1px solid #405640;margin-bottom:14px}
+.vehicle-photo-empty{height:150px;display:grid;place-content:center;justify-items:center;gap:8px;border:1px dashed #405640;border-radius:12px;background:#0e1610;color:#9aaa9d;margin-bottom:14px;font-size:11px}
+@media(max-width:700px){
+ .vehicle-profile{gap:9px}
+ .vehicle-thumb{width:64px;height:50px}
+ .photo-upload{min-height:42px}
+ .appointment-filters{width:100%}
+ .appointment-row{align-items:stretch}
+ .appointment-open{width:100%;padding:2px 0}
+ .row-actions{justify-content:flex-start}
+ .schedule-total{grid-column:auto}
+ .detail-modal{padding:17px;border-radius:14px}
+ .modal-backdrop{padding:10px;align-items:end}
+ .detail-modal{max-height:88dvh}
+ .detail-grid{grid-template-columns:1fr 1fr;gap:8px}
+ .detail-grid>div{padding:10px}
+ .modal-actions{display:grid;grid-template-columns:1fr}
+ .modal-actions button{width:100%;min-height:44px}
+}
