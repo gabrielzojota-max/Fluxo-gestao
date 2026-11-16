@@ -104,8 +104,12 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
    const update=tipo==="compra"
     ?e.DB.prepare("UPDATE produtos SET quantidade=quantidade+?,custo_unitario_centavos=COALESCE(?,custo_unitario_centavos) WHERE id=? AND ativo=1").bind(quantidade,custo,produtoId)
     :e.DB.prepare("UPDATE produtos SET quantidade=quantidade-? WHERE id=? AND ativo=1 AND quantidade>=?").bind(quantidade,produtoId,quantidade);
-   const changed=await update.run();if(!changed.meta.changes)return json({error:"O estoque mudou. Atualize a tela e tente novamente."},409,h);
-   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO movimentacoes_estoque(id,produto_id,tipo,quantidade,custo_unitario_centavos,motivo,criado_por) VALUES(?,?,?,?,?,?,?)").bind(id,produtoId,tipo,quantidade,custo,motivo,(current as any).id).run();
+   const id=crypto.randomUUID();const batch=await e.DB.batch([
+    update,
+    e.DB.prepare("INSERT INTO movimentacoes_estoque(id,produto_id,tipo,quantidade,custo_unitario_centavos,motivo,criado_por) SELECT ?,?,?,?,?,?,? WHERE changes()=1").bind(id,produtoId,tipo,quantidade,custo,motivo,(current as any).id)
+   ]);
+   if(!batch[0].meta.changes)return json({error:"O estoque mudou. Atualize a tela e tente novamente."},409,h);
+   if(!batch[1].meta.changes)return json({error:"Não foi possível registrar a movimentação. Nenhuma alteração foi mantida."},500,h);
    await audit(e,(current as any).id,"movimentacao_estoque_"+tipo,"movimentacoes_estoque");return json({id,status:"registrado"},201,h)
   }catch(error){console.error("stock_movement_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível registrar a movimentação."},500,h)}
  }
