@@ -195,7 +195,7 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
    if(r.method==="POST"){
     if(closed)return json({error:"Este dia já foi fechado. O fechamento existente foi preservado.",fechamento:closed,resumo:JSON.parse(String(closed.resumo_json||"{}"))},409,h);
     const observacoes=String(payload.observacoes??"").trim().slice(0,500);
-    if(dia>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10))return json({error:"Não é possível fechar uma data futura."},400,h);
+    if(dia>new Date(Date.now()-3*60*60*1000).toISOString().slice(0,10))return json({error:"Não é possível fechar uma data futura."},400,h);
     const ins=await e.DB.prepare("INSERT OR IGNORE INTO fechamentos_caixa(dia,total_entradas_centavos,total_saidas_centavos,saldo_centavos,resumo_json,observacoes,fechado_por) VALUES(?,?,?,?,?,?,?)").bind(dia,entradas,saidas,entradas-saidas,JSON.stringify(resumo),observacoes,(current as any).id).run();
     if(!ins.meta.changes)return json({error:"Este dia já foi fechado por outro usuário."},409,h);
     await audit(e,(current as any).id,"caixa_fechado_"+dia,"fechamentos_caixa");
