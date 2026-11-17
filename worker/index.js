@@ -129,7 +129,7 @@ export default { async fetch(r, e) {
         }
         if (r.method === "GET" && u.pathname === "/api/clientes") {
             const q = (u.searchParams.get("q") ?? "").trim();
-            const rows = await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos FROM clientes c WHERE (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q, q, q).all();
+            const rows = await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos FROM clientes c WHERE c.ativo=1 AND (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q, q, q).all();
             return json({ clientes: rows.results ?? [] }, 200, h);
         }
         if (r.method === "POST" && u.pathname === "/api/clientes") {
@@ -146,6 +146,13 @@ export default { async fetch(r, e) {
                 console.error("cliente_create_error", { message: error instanceof Error ? error.message : "unknown" });
                 return json({ error: "Não foi possível cadastrar o cliente." }, 500, h);
             }
+        }
+        if (r.method === "POST" && /^\/api\/clientes\/[^/]+\/arquivar$/.test(u.pathname)) {
+            const id = u.pathname.split("/")[3];
+            const result = await e.DB.prepare("UPDATE clientes SET ativo=0,arquivado_em=CURRENT_TIMESTAMP WHERE id=? AND ativo=1").bind(id).run();
+            if (!result.meta.changes) return json({ error: "Cliente não encontrado ou já excluído." }, 404, h);
+            await audit(e, current.id, "cliente_arquivado", id);
+            return json({ status: "archived" }, 200, h);
         }
         if (r.method === "GET" && /^\/api\/clientes\/[^/]+$/.test(u.pathname)) {
             const id = u.pathname.split("/").pop() ?? "";
@@ -404,7 +411,7 @@ export default { async fetch(r, e) {
         }
         if (r.method === "GET" && u.pathname === "/api/veiculos") {
             const clienteId = (u.searchParams.get("cliente_id") ?? "").trim();
-            const rows = await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,v.foto_data,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id WHERE (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId, clienteId).all();
+            const rows = await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,v.foto_data,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id WHERE c.ativo=1 AND (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId, clienteId).all();
             return json({ veiculos: rows.results ?? [] }, 200, h);
         }
         if (r.method === "PATCH" && /^\/api\/veiculos\/[^/]+$/.test(u.pathname)) {
@@ -464,7 +471,7 @@ export default { async fetch(r, e) {
             }
         }
         if (r.method === "GET" && u.pathname === "/api/atendimentos") {
-            const rows = await e.DB.prepare("SELECT a.id,a.veiculo_id,a.data_hora,a.status,a.valor_centavos,a.observacoes,c.nome cliente,c.telefone,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT json_group_array(json_object('descricao',s.descricao,'valor_centavos',s.valor_centavos)) FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'[]') servicos_detalhados FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY a.data_hora DESC LIMIT 200").all();
+            const rows = await e.DB.prepare("SELECT a.id,a.veiculo_id,a.data_hora,a.status,a.valor_centavos,a.observacoes,a.motivo_cancelamento,a.cancelado_em,c.nome cliente,c.telefone,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT json_group_array(json_object('descricao',s.descricao,'valor_centavos',s.valor_centavos)) FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'[]') servicos_detalhados FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY a.data_hora DESC LIMIT 200").all();
             return json({ atendimentos: rows.results ?? [] }, 200, h);
         }
         if (r.method === "POST" && u.pathname === "/api/atendimentos") {
@@ -508,13 +515,16 @@ export default { async fetch(r, e) {
         }
         if (r.method === "PATCH" && u.pathname.startsWith("/api/atendimentos/")) {
             try {
-                const id = u.pathname.split("/").pop() ?? "", b = await body(r), status = String(b.status ?? "");
+                const id = u.pathname.split("/").pop() ?? "", b = await body(r), status = String(b.status ?? ""), reason = String(b.motivo_cancelamento ?? "").trim();
                 if (!["agendado", "em_andamento", "concluido", "cancelado"].includes(status))
                     return json({ error: "Status inválido." }, 400, h);
-                const result = await e.DB.prepare("UPDATE atendimentos SET status=? WHERE id=?").bind(status, id).run();
+                if (status === "cancelado" && (reason.length < 3 || reason.length > 500)) return json({ error: "Informe o motivo do cancelamento (3 a 500 caracteres)." }, 400, h);
+                const result = status === "cancelado"
+                    ? await e.DB.prepare("UPDATE atendimentos SET status=?,motivo_cancelamento=?,cancelado_em=CURRENT_TIMESTAMP WHERE id=? AND status IN ('agendado','em_andamento')").bind(status, reason, id).run()
+                    : await e.DB.prepare("UPDATE atendimentos SET status=?,motivo_cancelamento=NULL,cancelado_em=NULL WHERE id=?").bind(status, id).run();
                 if (!result.meta.changes)
                     return json({ error: "Atendimento não encontrado." }, 404, h);
-                await audit(e, current.id, "atendimento_status_alterado", "atendimentos");
+                await audit(e, current.id, status === "cancelado" ? "atendimento_cancelado" : "atendimento_status_alterado", id);
                 return json({ status }, 200, h);
             }
             catch (error) {
