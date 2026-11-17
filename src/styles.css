@@ -1740,3 +1740,12 @@ button:focus-visible,[role="button"]:focus-visible{
 .cancel-reason-inline{color:#ffaaaa!important;white-space:normal}
 .cancellation-detail{border-color:rgba(239,95,95,.25)}
 @media(max-width:640px){.profile-header-actions{width:100%;justify-content:space-between}.profile-header-actions .danger-action{min-height:40px}.cancel-appointment-panel .danger-action{width:100%}}
+
+/* Service catalog actions */
+.service-row{align-items:center;gap:12px;flex-wrap:wrap}
+.service-row>div:first-child{min-width:0;flex:1}
+.service-actions{display:flex;align-items:center;gap:8px}
+.service-actions button:not(.danger-action){min-height:40px;padding:8px 13px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.045);color:inherit;font:inherit;font-weight:650;cursor:pointer}
+.service-actions button:not(.danger-action):hover{border-color:rgba(164,255,73,.45);background:rgba(164,255,73,.08)}
+.service-actions button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:640px){.service-row{align-items:flex-start}.service-row>strong{margin-left:auto}.service-actions{width:100%}.service-actions button{flex:1}}
