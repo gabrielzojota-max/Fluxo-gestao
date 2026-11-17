@@ -2131,10 +2131,6 @@ section:has(.stock-page){
 section:has(.reports-page){
   --module-accent:#b7c4f2;--module-accent-soft:#b7c4f216;--module-border:#59688d;
 }
-section:has(.client-profile),section:has(.module-grid),section:has(.appointments-page),
-section:has(.finance-page),section:has(.stock-page),section:has(.reports-page){
-  --module-accent:var(--module-accent,#c8f17f);
-}
 section:has(.client-profile) .heading,
 section:has(.module-grid) .heading,
 section:has(.appointments-page) .heading,
