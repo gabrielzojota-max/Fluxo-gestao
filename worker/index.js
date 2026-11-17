@@ -129,7 +129,7 @@ export default { async fetch(r, e) {
         }
         if (r.method === "GET" && u.pathname === "/api/clientes") {
             const q = (u.searchParams.get("q") ?? "").trim();
-            const rows = await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos FROM clientes c WHERE c.ativo=1 AND (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q, q, q).all();
+            const rows = await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos FROM clientes c WHERE (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q, q, q).all();
             return json({ clientes: rows.results ?? [] }, 200, h);
         }
         if (r.method === "POST" && u.pathname === "/api/clientes") {
@@ -147,21 +147,14 @@ export default { async fetch(r, e) {
                 return json({ error: "Não foi possível cadastrar o cliente." }, 500, h);
             }
         }
-        if (r.method === "POST" && /^\/api\/clientes\/[^/]+\/arquivar$/.test(u.pathname)) {
-            const id = u.pathname.split("/")[3];
-            const result = await e.DB.prepare("UPDATE clientes SET ativo=0,arquivado_em=CURRENT_TIMESTAMP WHERE id=? AND ativo=1").bind(id).run();
-            if (!result.meta.changes) return json({ error: "Cliente não encontrado ou já excluído." }, 404, h);
-            await audit(e, current.id, "cliente_arquivado", "clientes");
-            return json({ status: "archived" }, 200, h);
-        }
         if (r.method === "GET" && /^\/api\/clientes\/[^/]+$/.test(u.pathname)) {
             const id = u.pathname.split("/").pop() ?? "";
             const client = await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos,(SELECT MAX(a.data_hora) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') ultima_visita FROM clientes c WHERE c.id=?").bind(id).first();
             if (!client)
                 return json({ error: "Cliente não encontrado." }, 404, h);
             const [vehicles, history] = await Promise.all([
-                e.DB.prepare("SELECT id,marca,modelo,ano,placa,cor,observacoes,foto_data FROM veiculos WHERE cliente_id=? AND ativo=1 ORDER BY criado_em DESC").bind(id).all(),
-                e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.motivo_cancelamento,a.cancelado_em,a.valor_centavos,a.desconto_centavos,a.acrescimo_centavos,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='pendente'),0) pendente_centavos FROM atendimentos a LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.cliente_id=? ORDER BY a.data_hora DESC LIMIT 100").bind(id).all()
+                e.DB.prepare("SELECT id,marca,modelo,ano,placa,cor,observacoes,foto_data FROM veiculos WHERE cliente_id=? ORDER BY criado_em DESC").bind(id).all(),
+                e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.valor_centavos,a.desconto_centavos,a.acrescimo_centavos,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='pendente'),0) pendente_centavos FROM atendimentos a LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.cliente_id=? ORDER BY a.data_hora DESC LIMIT 100").bind(id).all()
             ]);
             return json({ cliente: client, veiculos: vehicles.results ?? [], historico: history.results ?? [] }, 200, h);
         }
@@ -262,6 +255,33 @@ export default { async fetch(r, e) {
             catch (error) {
                 console.error("expense_pay_error", { message: error instanceof Error ? error.message : "unknown" });
                 return json({ error: "Não foi possível dar baixa na despesa." }, 500, h);
+            }
+        }
+        if (u.pathname === "/api/reserva" && (r.method === "GET" || r.method === "POST")) {
+            try {
+                await e.DB.prepare("CREATE TABLE IF NOT EXISTS reserva_movimentacoes(id TEXT PRIMARY KEY,tipo TEXT NOT NULL CHECK(tipo IN('aporte','uso')),descricao TEXT NOT NULL,valor_centavos INTEGER NOT NULL CHECK(valor_centavos>0),criado_por TEXT REFERENCES usuarios(id),criado_em TEXT NOT NULL DEFAULT(datetime('now','-3 hours')))").run();
+                if (r.method === "POST") {
+                    const b = await body(r), tipo = String(b.tipo ?? ""), descricao = String(b.descricao ?? "").trim(), valor = Math.round(Number(b.valor_reais ?? 0) * 100);
+                    if (!["aporte", "uso"].includes(tipo) || descricao.length < 2 || descricao.length > 160 || !Number.isSafeInteger(valor) || valor <= 0 || valor > 100000000)
+                        return json({ error: "Informe o tipo, uma descrição e um valor válido para a reserva." }, 400, h);
+                    const id = crypto.randomUUID(), movementId = crypto.randomUUID(), label = (tipo === "aporte" ? "Depósito na reserva · " : "Uso da reserva em melhoria · ") + descricao;
+                    const batch = await e.DB.batch([
+                        e.DB.prepare("INSERT INTO reserva_movimentacoes(id,tipo,descricao,valor_centavos,criado_por) SELECT ?,?,?,?,? WHERE ?='aporte' OR ?<=COALESCE((SELECT SUM(CASE WHEN tipo='aporte' THEN valor_centavos ELSE -valor_centavos END) FROM reserva_movimentacoes),0)").bind(id, tipo, descricao, valor, current.id, tipo, valor),
+                        e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?,'saida','reserva',?,?,?,'outro',? WHERE EXISTS(SELECT 1 FROM reserva_movimentacoes WHERE id=?)").bind(movementId, id, label, valor, current.id, id)
+                    ]);
+                    if (!batch[0].meta.changes)
+                        return json({ error: "O valor informado é maior que o saldo guardado na reserva." }, 400, h);
+                    await audit(e, current.id, tipo === "aporte" ? "reserva_aporte" : "reserva_uso", "reserva_movimentacoes");
+                }
+                const [totals, rows] = await Promise.all([
+                    e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN tipo='aporte' THEN valor_centavos ELSE -valor_centavos END),0) saldo_centavos,COALESCE(SUM(CASE WHEN tipo='aporte' THEN valor_centavos ELSE 0 END),0) total_guardado_centavos,COALESCE(SUM(CASE WHEN tipo='uso' THEN valor_centavos ELSE 0 END),0) total_utilizado_centavos FROM reserva_movimentacoes").first(),
+                    e.DB.prepare("SELECT id,tipo,descricao,valor_centavos,criado_em FROM reserva_movimentacoes ORDER BY criado_em DESC LIMIT 100").all()
+                ]);
+                return json({ ...totals, movimentacoes: rows.results ?? [] }, r.method === "POST" ? 201 : 200, h);
+            }
+            catch (error) {
+                console.error("reserve_error", { message: error instanceof Error ? error.message : "unknown" });
+                return json({ error: "Não foi possível carregar ou atualizar a reserva." }, 500, h);
             }
         }
         if (r.method === "GET" && u.pathname === "/api/relatorios") {
@@ -411,28 +431,24 @@ export default { async fetch(r, e) {
         }
         if (r.method === "GET" && u.pathname === "/api/veiculos") {
             const clienteId = (u.searchParams.get("cliente_id") ?? "").trim();
-            const rows = await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,v.foto_data,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id WHERE c.ativo=1 AND v.ativo=1 AND (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId, clienteId).all();
+            const rows = await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,v.foto_data,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id WHERE (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId, clienteId).all();
             return json({ veiculos: rows.results ?? [] }, 200, h);
         }
         if (r.method === "PATCH" && /^\/api\/veiculos\/[^/]+$/.test(u.pathname)) {
             try {
-                const id=u.pathname.split("/").pop()??"", b=await body(r), currentVehicle=await e.DB.prepare("SELECT id FROM veiculos WHERE id=? AND ativo=1").bind(id).first();
-                if(!currentVehicle)return json({error:"Veículo não encontrado."},404,h);
-                const sets=[],values=[];
-                if(b.modelo!==undefined){const v=String(b.modelo).trim();if(v.length<2||v.length>100)return json({error:"Informe um modelo entre 2 e 100 caracteres."},400,h);sets.push("modelo=?");values.push(v);}
-                if(b.placa!==undefined){const v=String(b.placa).trim().toUpperCase();if(v.length>12)return json({error:"Confira a placa informada."},400,h);sets.push("placa=?");values.push(v||null);}
-                if(b.ano!==undefined){const v=b.ano==null||b.ano===""?null:Number(b.ano);if(v!==null&&(!Number.isInteger(v)||v<1950||v>2100))return json({error:"Confira o ano do veículo."},400,h);sets.push("ano=?");values.push(v);}
-                if(b.cor!==undefined){const v=String(b.cor).trim();if(v.length>40)return json({error:"A cor deve ter até 40 caracteres."},400,h);sets.push("cor=?");values.push(v||null);}
-                if(b.foto_data!==undefined){const v=String(b.foto_data??"");if(v&&(v.length>480000||!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v)))return json({error:"Envie uma foto JPG, PNG ou WebP com tamanho reduzido."},400,h);sets.push("foto_data=?");values.push(v||null);}
-                if(!sets.length)return json({error:"Nenhuma alteração informada."},400,h);
-                await e.DB.prepare("UPDATE veiculos SET "+sets.join(",")+" WHERE id=? AND ativo=1").bind(...values,id).run();
-                await audit(e,current.id,b.foto_data!==undefined&&sets.length===1?"foto_veiculo_atualizada":"veiculo_atualizado","veiculos");
-                return json({status:"updated"},200,h);
-            }catch(error){console.error("vehicle_update_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível atualizar o veículo."},500,h);}
-        }
-        if (r.method === "POST" && /^\/api\/veiculos\/[^/]+\/excluir$/.test(u.pathname)) {
-            try{const id=u.pathname.split("/")[3],result=await e.DB.prepare("UPDATE veiculos SET ativo=0 WHERE id=? AND ativo=1").bind(id).run();if(!result.meta.changes)return json({error:"Veículo não encontrado ou já excluído."},404,h);await audit(e,current.id,"veiculo_excluido","veiculos");return json({status:"deleted"},200,h);}
-            catch(error){console.error("vehicle_delete_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível excluir o veículo."},500,h);}
+                const id = u.pathname.split("/").pop() ?? "", b = await body(r), fotoData = String(b.foto_data ?? "");
+                if (!fotoData || fotoData.length > 480000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(fotoData))
+                    return json({ error: "Envie uma foto JPG, PNG ou WebP com tamanho reduzido." }, 400, h);
+                const result = await e.DB.prepare("UPDATE veiculos SET foto_data=? WHERE id=?").bind(fotoData, id).run();
+                if (!result.meta.changes)
+                    return json({ error: "Veículo não encontrado." }, 404, h);
+                await audit(e, current.id, "foto_veiculo_atualizada", "veiculos");
+                return json({ status: "updated" }, 200, h);
+            }
+            catch (error) {
+                console.error("vehicle_photo_error", { message: error instanceof Error ? error.message : "unknown" });
+                return json({ error: "Não foi possível salvar a foto do veículo." }, 500, h);
+            }
         }
         if (r.method === "POST" && u.pathname === "/api/veiculos") {
             try {
@@ -474,34 +490,8 @@ export default { async fetch(r, e) {
                 return json({ error: "Não foi possível cadastrar o serviço." }, 500, h);
             }
         }
-        if (r.method === "PATCH" && /^\/api\/servicos\/[^/]+$/.test(u.pathname)) {
-            try {
-                const id = u.pathname.split("/").pop() ?? "", b = await body(r), nome = String(b.nome ?? "").trim(), descricao = String(b.descricao ?? "").trim(), preco = Math.round(Number(b.preco ?? 0) * 100);
-                if (nome.length < 2 || nome.length > 100 || descricao.length > 500 || !Number.isSafeInteger(preco) || preco < 0 || preco > 100000000)
-                    return json({ error: "Confira nome, descrição e preço do serviço." }, 400, h);
-                const result = await e.DB.prepare("UPDATE catalogo_servicos SET nome=?,descricao=?,preco_sugerido_centavos=? WHERE id=? AND ativo=1").bind(nome, descricao || null, preco, id).run();
-                if (!result.meta.changes) return json({ error: "Serviço não encontrado ou inativo." }, 404, h);
-                await audit(e, current.id, "servico_atualizado", "catalogo_servicos");
-                return json({ status: "updated" }, 200, h);
-            } catch (error) {
-                console.error("servico_update_error", { message: error instanceof Error ? error.message : "unknown" });
-                return json({ error: "Não foi possível atualizar o serviço." }, 500, h);
-            }
-        }
-        if (r.method === "POST" && /^\/api\/servicos\/[^/]+\/excluir$/.test(u.pathname)) {
-            try {
-                const id = u.pathname.split("/")[3];
-                const result = await e.DB.prepare("UPDATE catalogo_servicos SET ativo=0 WHERE id=? AND ativo=1").bind(id).run();
-                if (!result.meta.changes) return json({ error: "Serviço não encontrado ou já excluído." }, 404, h);
-                await audit(e, current.id, "servico_excluido", "catalogo_servicos");
-                return json({ status: "deleted" }, 200, h);
-            } catch (error) {
-                console.error("servico_delete_error", { message: error instanceof Error ? error.message : "unknown" });
-                return json({ error: "Não foi possível excluir o serviço." }, 500, h);
-            }
-        }
         if (r.method === "GET" && u.pathname === "/api/atendimentos") {
-            const rows = await e.DB.prepare("SELECT a.id,a.veiculo_id,a.data_hora,a.status,a.valor_centavos,a.observacoes,a.motivo_cancelamento,a.cancelado_em,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='pendente'),0) pendente_centavos,c.nome cliente,c.telefone,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT json_group_array(json_object('descricao',s.descricao,'valor_centavos',s.valor_centavos)) FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'[]') servicos_detalhados FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY a.data_hora DESC LIMIT 200").all();
+            const rows = await e.DB.prepare("SELECT a.id,a.veiculo_id,a.data_hora,a.status,a.valor_centavos,a.observacoes,c.nome cliente,c.telefone,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT json_group_array(json_object('descricao',s.descricao,'valor_centavos',s.valor_centavos)) FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'[]') servicos_detalhados FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY a.data_hora DESC LIMIT 200").all();
             return json({ atendimentos: rows.results ?? [] }, 200, h);
         }
         if (r.method === "POST" && u.pathname === "/api/atendimentos") {
@@ -543,42 +533,15 @@ export default { async fetch(r, e) {
                 return json({ error: "Não foi possível criar o atendimento." }, 500, h);
             }
         }
-        if (r.method === "POST" && /^\/api\/atendimentos\/[^/]+\/excluir$/.test(u.pathname)) {
-            try {
-                const id = u.pathname.split("/")[3];
-                const appointment = await e.DB.prepare("SELECT id,status FROM atendimentos WHERE id=?").bind(id).first();
-                if (!appointment) return json({ error: "Agendamento não encontrado." }, 404, h);
-                if (!["agendado", "cancelado", "concluido"].includes(appointment.status)) return json({ error: "Só é possível excluir agendamentos ainda não iniciados ou já cancelados." }, 409, h);
-                const [payments, stock, files] = await Promise.all([
-                    e.DB.prepare("SELECT COUNT(*) total FROM pagamentos WHERE atendimento_id=? AND status='recebido'").bind(id).first(),
-                    e.DB.prepare("SELECT COUNT(*) total FROM movimentacoes_estoque WHERE atendimento_id=?").bind(id).first(),
-                    e.DB.prepare("SELECT COUNT(*) total FROM arquivos WHERE atendimento_id=?").bind(id).first()
-                ]);
-                if (Number(payments?.total||0)>0 || Number(stock?.total||0)>0 || Number(files?.total||0)>0) return json({ error: "Este atendimento possui pagamento recebido, movimentação de estoque ou arquivos vinculados e não pode ser excluído." }, 409, h);
-                await e.DB.batch([
-                    e.DB.prepare("DELETE FROM pagamentos WHERE atendimento_id=? AND status='pendente'").bind(id),
-                    e.DB.prepare("DELETE FROM atendimento_servicos WHERE atendimento_id=?").bind(id),
-                    e.DB.prepare("DELETE FROM atendimentos WHERE id=?").bind(id)
-                ]);
-                await audit(e, current.id, "atendimento_excluido", "atendimentos");
-                return json({ status: "deleted" }, 200, h);
-            } catch (error) {
-                console.error("appointment_delete_error", { message: error instanceof Error ? error.message : "unknown" });
-                return json({ error: "Não foi possível excluir o agendamento." }, 500, h);
-            }
-        }
         if (r.method === "PATCH" && u.pathname.startsWith("/api/atendimentos/")) {
             try {
-                const id = u.pathname.split("/").pop() ?? "", b = await body(r), status = String(b.status ?? ""), reason = String(b.motivo_cancelamento ?? "").trim();
+                const id = u.pathname.split("/").pop() ?? "", b = await body(r), status = String(b.status ?? "");
                 if (!["agendado", "em_andamento", "concluido", "cancelado"].includes(status))
                     return json({ error: "Status inválido." }, 400, h);
-                if (status === "cancelado" && (reason.length < 3 || reason.length > 500)) return json({ error: "Informe o motivo do cancelamento (3 a 500 caracteres)." }, 400, h);
-                const result = status === "cancelado"
-                    ? await e.DB.prepare("UPDATE atendimentos SET status=?,motivo_cancelamento=?,cancelado_em=CURRENT_TIMESTAMP WHERE id=? AND status IN ('agendado','em_andamento')").bind(status, reason, id).run()
-                    : await e.DB.prepare("UPDATE atendimentos SET status=?,motivo_cancelamento=NULL,cancelado_em=NULL WHERE id=?").bind(status, id).run();
+                const result = await e.DB.prepare("UPDATE atendimentos SET status=? WHERE id=?").bind(status, id).run();
                 if (!result.meta.changes)
                     return json({ error: "Atendimento não encontrado." }, 404, h);
-                await audit(e, current.id, status === "cancelado" ? "atendimento_cancelado" : "atendimento_status_alterado", "atendimentos");
+                await audit(e, current.id, "atendimento_status_alterado", "atendimentos");
                 return json({ status }, 200, h);
             }
             catch (error) {
