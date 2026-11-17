@@ -470,7 +470,7 @@ export default { async fetch(r, e) {
                 return json({ error: "Não foi possível cadastrar o serviço." }, 500, h);
             }
         }
-        if (r.method === "PATCH" && /^\\/api\\/servicos\\/[^/]+$/.test(u.pathname)) {
+        if (r.method === "PATCH" && /^\/api\/servicos\/[^/]+$/.test(u.pathname)) {
             try {
                 const id = u.pathname.split("/").pop() ?? "", b = await body(r), nome = String(b.nome ?? "").trim(), descricao = String(b.descricao ?? "").trim(), preco = Math.round(Number(b.preco ?? 0) * 100);
                 if (nome.length < 2 || nome.length > 100 || descricao.length > 500 || !Number.isSafeInteger(preco) || preco < 0 || preco > 100000000)
@@ -484,7 +484,7 @@ export default { async fetch(r, e) {
                 return json({ error: "Não foi possível atualizar o serviço." }, 500, h);
             }
         }
-        if (r.method === "POST" && /^\\/api\\/servicos\\/[^/]+\\/excluir$/.test(u.pathname)) {
+        if (r.method === "POST" && /^\/api\/servicos\/[^/]+\/excluir$/.test(u.pathname)) {
             try {
                 const id = u.pathname.split("/")[3];
                 const result = await e.DB.prepare("UPDATE catalogo_servicos SET ativo=0 WHERE id=? AND ativo=1").bind(id).run();
