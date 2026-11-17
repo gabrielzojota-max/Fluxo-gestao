@@ -556,6 +556,7 @@ export default { async fetch(r, e) {
                 ]);
                 if (Number(payments?.total||0)>0 || Number(stock?.total||0)>0 || Number(files?.total||0)>0) return json({ error: "Este atendimento possui pagamento recebido, movimentação de estoque ou arquivos vinculados e não pode ser excluído." }, 409, h);
                 await e.DB.batch([
+                    e.DB.prepare("DELETE FROM pagamentos WHERE atendimento_id=? AND status='pendente'").bind(id),
                     e.DB.prepare("DELETE FROM atendimento_servicos WHERE atendimento_id=?").bind(id),
                     e.DB.prepare("DELETE FROM atendimentos WHERE id=?").bind(id)
                 ]);
