@@ -160,7 +160,7 @@ export default { async fetch(r, e) {
             if (!client)
                 return json({ error: "Cliente não encontrado." }, 404, h);
             const [vehicles, history] = await Promise.all([
-                e.DB.prepare("SELECT id,marca,modelo,ano,placa,cor,observacoes,foto_data FROM veiculos WHERE cliente_id=? ORDER BY criado_em DESC").bind(id).all(),
+                e.DB.prepare("SELECT id,marca,modelo,ano,placa,cor,observacoes,foto_data FROM veiculos WHERE cliente_id=? AND ativo=1 ORDER BY criado_em DESC").bind(id).all(),
                 e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.motivo_cancelamento,a.cancelado_em,a.valor_centavos,a.desconto_centavos,a.acrescimo_centavos,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='pendente'),0) pendente_centavos FROM atendimentos a LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.cliente_id=? ORDER BY a.data_hora DESC LIMIT 100").bind(id).all()
             ]);
             return json({ cliente: client, veiculos: vehicles.results ?? [], historico: history.results ?? [] }, 200, h);
@@ -411,24 +411,28 @@ export default { async fetch(r, e) {
         }
         if (r.method === "GET" && u.pathname === "/api/veiculos") {
             const clienteId = (u.searchParams.get("cliente_id") ?? "").trim();
-            const rows = await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,v.foto_data,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id WHERE c.ativo=1 AND (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId, clienteId).all();
+            const rows = await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,v.foto_data,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id WHERE c.ativo=1 AND v.ativo=1 AND (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId, clienteId).all();
             return json({ veiculos: rows.results ?? [] }, 200, h);
         }
         if (r.method === "PATCH" && /^\/api\/veiculos\/[^/]+$/.test(u.pathname)) {
             try {
-                const id = u.pathname.split("/").pop() ?? "", b = await body(r), fotoData = String(b.foto_data ?? "");
-                if (!fotoData || fotoData.length > 480000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(fotoData))
-                    return json({ error: "Envie uma foto JPG, PNG ou WebP com tamanho reduzido." }, 400, h);
-                const result = await e.DB.prepare("UPDATE veiculos SET foto_data=? WHERE id=?").bind(fotoData, id).run();
-                if (!result.meta.changes)
-                    return json({ error: "Veículo não encontrado." }, 404, h);
-                await audit(e, current.id, "foto_veiculo_atualizada", "veiculos");
-                return json({ status: "updated" }, 200, h);
-            }
-            catch (error) {
-                console.error("vehicle_photo_error", { message: error instanceof Error ? error.message : "unknown" });
-                return json({ error: "Não foi possível salvar a foto do veículo." }, 500, h);
-            }
+                const id=u.pathname.split("/").pop()??"", b=await body(r), currentVehicle=await e.DB.prepare("SELECT id FROM veiculos WHERE id=? AND ativo=1").bind(id).first();
+                if(!currentVehicle)return json({error:"Veículo não encontrado."},404,h);
+                const sets=[],values=[];
+                if(b.modelo!==undefined){const v=String(b.modelo).trim();if(v.length<2||v.length>100)return json({error:"Informe um modelo entre 2 e 100 caracteres."},400,h);sets.push("modelo=?");values.push(v);}
+                if(b.placa!==undefined){const v=String(b.placa).trim().toUpperCase();if(v.length>12)return json({error:"Confira a placa informada."},400,h);sets.push("placa=?");values.push(v||null);}
+                if(b.ano!==undefined){const v=b.ano==null||b.ano===""?null:Number(b.ano);if(v!==null&&(!Number.isInteger(v)||v<1950||v>2100))return json({error:"Confira o ano do veículo."},400,h);sets.push("ano=?");values.push(v);}
+                if(b.cor!==undefined){const v=String(b.cor).trim();if(v.length>40)return json({error:"A cor deve ter até 40 caracteres."},400,h);sets.push("cor=?");values.push(v||null);}
+                if(b.foto_data!==undefined){const v=String(b.foto_data??"");if(v&&(v.length>480000||!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v)))return json({error:"Envie uma foto JPG, PNG ou WebP com tamanho reduzido."},400,h);sets.push("foto_data=?");values.push(v||null);}
+                if(!sets.length)return json({error:"Nenhuma alteração informada."},400,h);
+                await e.DB.prepare("UPDATE veiculos SET "+sets.join(",")+" WHERE id=? AND ativo=1").bind(...values,id).run();
+                await audit(e,current.id,b.foto_data!==undefined&&sets.length===1?"foto_veiculo_atualizada":"veiculo_atualizado","veiculos");
+                return json({status:"updated"},200,h);
+            }catch(error){console.error("vehicle_update_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível atualizar o veículo."},500,h);}
+        }
+        if (r.method === "POST" && /^\/api\/veiculos\/[^/]+\/excluir$/.test(u.pathname)) {
+            try{const id=u.pathname.split("/")[3],result=await e.DB.prepare("UPDATE veiculos SET ativo=0 WHERE id=? AND ativo=1").bind(id).run();if(!result.meta.changes)return json({error:"Veículo não encontrado ou já excluído."},404,h);await audit(e,current.id,"veiculo_excluido","veiculos");return json({status:"deleted"},200,h);}
+            catch(error){console.error("vehicle_delete_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível excluir o veículo."},500,h);}
         }
         if (r.method === "POST" && u.pathname === "/api/veiculos") {
             try {
@@ -497,7 +501,7 @@ export default { async fetch(r, e) {
             }
         }
         if (r.method === "GET" && u.pathname === "/api/atendimentos") {
-            const rows = await e.DB.prepare("SELECT a.id,a.veiculo_id,a.data_hora,a.status,a.valor_centavos,a.observacoes,a.motivo_cancelamento,a.cancelado_em,c.nome cliente,c.telefone,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT json_group_array(json_object('descricao',s.descricao,'valor_centavos',s.valor_centavos)) FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'[]') servicos_detalhados FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY a.data_hora DESC LIMIT 200").all();
+            const rows = await e.DB.prepare("SELECT a.id,a.veiculo_id,a.data_hora,a.status,a.valor_centavos,a.observacoes,a.motivo_cancelamento,a.cancelado_em,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='pendente'),0) pendente_centavos,c.nome cliente,c.telefone,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT json_group_array(json_object('descricao',s.descricao,'valor_centavos',s.valor_centavos)) FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'[]') servicos_detalhados FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY a.data_hora DESC LIMIT 200").all();
             return json({ atendimentos: rows.results ?? [] }, 200, h);
         }
         if (r.method === "POST" && u.pathname === "/api/atendimentos") {
@@ -544,13 +548,13 @@ export default { async fetch(r, e) {
                 const id = u.pathname.split("/")[3];
                 const appointment = await e.DB.prepare("SELECT id,status FROM atendimentos WHERE id=?").bind(id).first();
                 if (!appointment) return json({ error: "Agendamento não encontrado." }, 404, h);
-                if (!["agendado", "cancelado"].includes(appointment.status)) return json({ error: "Só é possível excluir agendamentos ainda não iniciados ou já cancelados." }, 409, h);
+                if (!["agendado", "cancelado", "concluido"].includes(appointment.status)) return json({ error: "Só é possível excluir agendamentos ainda não iniciados ou já cancelados." }, 409, h);
                 const [payments, stock, files] = await Promise.all([
-                    e.DB.prepare("SELECT COUNT(*) total FROM pagamentos WHERE atendimento_id=?").bind(id).first(),
+                    e.DB.prepare("SELECT COUNT(*) total FROM pagamentos WHERE atendimento_id=? AND status='recebido'").bind(id).first(),
                     e.DB.prepare("SELECT COUNT(*) total FROM movimentacoes_estoque WHERE atendimento_id=?").bind(id).first(),
                     e.DB.prepare("SELECT COUNT(*) total FROM arquivos WHERE atendimento_id=?").bind(id).first()
                 ]);
-                if (Number(payments?.total||0)>0 || Number(stock?.total||0)>0 || Number(files?.total||0)>0) return json({ error: "Este atendimento possui registros financeiros, de estoque ou arquivos vinculados e não pode ser excluído." }, 409, h);
+                if (Number(payments?.total||0)>0 || Number(stock?.total||0)>0 || Number(files?.total||0)>0) return json({ error: "Este atendimento possui pagamento recebido, movimentação de estoque ou arquivos vinculados e não pode ser excluído." }, 409, h);
                 await e.DB.batch([
                     e.DB.prepare("DELETE FROM atendimento_servicos WHERE atendimento_id=?").bind(id),
                     e.DB.prepare("DELETE FROM atendimentos WHERE id=?").bind(id)
