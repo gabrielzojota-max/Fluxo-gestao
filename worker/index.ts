@@ -143,6 +143,27 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
  await audit(e,current.id,"despesa_paga","despesas");return json({status:"paga"},200,h)
  }catch(error){console.error("expense_pay_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível dar baixa na despesa."},500,h)}
  }
+ if(u.pathname==="/api/reserva"&&(r.method==="GET"||r.method==="POST")){
+  try{
+   await e.DB.prepare("CREATE TABLE IF NOT EXISTS reserva_movimentacoes(id TEXT PRIMARY KEY,tipo TEXT NOT NULL CHECK(tipo IN('aporte','uso')),descricao TEXT NOT NULL,valor_centavos INTEGER NOT NULL CHECK(valor_centavos>0),criado_por TEXT REFERENCES usuarios(id),criado_em TEXT NOT NULL DEFAULT(datetime('now','-3 hours')))").run();
+   if(r.method==="POST"){
+    const b=await body(r),tipo=String(b.tipo??""),descricao=String(b.descricao??"").trim(),valor=Math.round(Number(b.valor_reais??0)*100);
+    if(!["aporte","uso"].includes(tipo)||descricao.length<2||descricao.length>160||!Number.isSafeInteger(valor)||valor<=0||valor>100000000)return json({error:"Informe o tipo, uma descrição e um valor válido para a reserva."},400,h);
+    const id=crypto.randomUUID(),movementId=crypto.randomUUID(),label=(tipo==="aporte"?"Depósito na reserva · ":"Uso da reserva em melhoria · ")+descricao;
+    const batch=await e.DB.batch([
+     e.DB.prepare("INSERT INTO reserva_movimentacoes(id,tipo,descricao,valor_centavos,criado_por) SELECT ?,?,?,?,? WHERE ?='aporte' OR ?<=COALESCE((SELECT SUM(CASE WHEN tipo='aporte' THEN valor_centavos ELSE -valor_centavos END) FROM reserva_movimentacoes),0)").bind(id,tipo,descricao,valor,(current as any).id,tipo,valor),
+     e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?,'saida','reserva',?,?,?,'outro',? WHERE EXISTS(SELECT 1 FROM reserva_movimentacoes WHERE id=?)").bind(movementId,id,label,valor,(current as any).id,id)
+    ]);
+    if(!batch[0].meta.changes)return json({error:"O valor informado é maior que o saldo guardado na reserva."},400,h);
+    await audit(e,(current as any).id,tipo==="aporte"?"reserva_aporte":"reserva_uso","reserva_movimentacoes");
+   }
+   const [totals,rows]=await Promise.all([
+    e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN tipo='aporte' THEN valor_centavos ELSE -valor_centavos END),0) saldo_centavos,COALESCE(SUM(CASE WHEN tipo='aporte' THEN valor_centavos ELSE 0 END),0) total_guardado_centavos,COALESCE(SUM(CASE WHEN tipo='uso' THEN valor_centavos ELSE 0 END),0) total_utilizado_centavos FROM reserva_movimentacoes").first<any>(),
+    e.DB.prepare("SELECT id,tipo,descricao,valor_centavos,criado_em FROM reserva_movimentacoes ORDER BY criado_em DESC LIMIT 100").all<any>()
+   ]);
+   return json({...totals,movimentacoes:rows.results??[]},r.method==="POST"?201:200,h)
+  }catch(error){console.error("reserve_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível carregar ou atualizar a reserva."},500,h)}
+ }
  if(r.method==="GET"&&u.pathname==="/api/relatorios"){
  const inicio=u.searchParams.get("inicio")??"",fim=u.searchParams.get("fim")??"",valid=(v:string)=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+"T00:00:00Z"));
  if(!valid(inicio)||!valid(fim)||inicio>fim)return json({error:"Informe um período válido."},400,h);
