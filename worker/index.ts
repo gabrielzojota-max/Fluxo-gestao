@@ -183,7 +183,7 @@ if(r.method==="GET"&&u.pathname==="/api/taxas-pagamento"){
 if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
   try{
    await e.DB.prepare("CREATE TABLE IF NOT EXISTS fechamentos_caixa(dia TEXT PRIMARY KEY,total_entradas_centavos INTEGER NOT NULL,total_saidas_centavos INTEGER NOT NULL,saldo_centavos INTEGER NOT NULL,resumo_json TEXT NOT NULL,observacoes TEXT,fechado_por TEXT NOT NULL,fechado_em TEXT NOT NULL DEFAULT(datetime('now','-3 hours')))").run();
-   const dia=r.method==="GET"?(u.searchParams.get("dia")??""):String((await body(r)).dia??"");
+   const payload=r.method==="POST"?await body(r):{};const dia=r.method==="GET"?(u.searchParams.get("dia")??""):String(payload.dia??"");
    if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(dia)||Number.isNaN(Date.parse(dia+"T00:00:00Z")))return json({error:"Informe uma data válida."},400,h);
    const [mov,byMethod,closed]=await Promise.all([
     e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN tipo='entrada' THEN valor_centavos ELSE 0 END),0) entradas_centavos,COALESCE(SUM(CASE WHEN tipo='saida' THEN valor_centavos ELSE 0 END),0) saidas_centavos,COUNT(*) quantidade FROM movimentacoes WHERE substr(ocorrido_em,1,10)=?").bind(dia).first<any>(),
@@ -193,7 +193,7 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
    const entradas=Number(mov?.entradas_centavos??0),saidas=Number(mov?.saidas_centavos??0),resumo={dia,entradas_centavos:entradas,saidas_centavos:saidas,saldo_centavos:entradas-saidas,quantidade:Number(mov?.quantidade??0),por_metodo:byMethod.results??[]};
    if(r.method==="POST"){
     if(closed)return json({error:"Este dia já foi fechado. O fechamento existente foi preservado.",fechamento:closed,resumo:JSON.parse(String(closed.resumo_json||"{}"))},409,h);
-    const b=await body(r),observacoes=String(b.observacoes??"").trim().slice(0,500);
+    const observacoes=String(payload.observacoes??"").trim().slice(0,500);
     if(dia>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10))return json({error:"Não é possível fechar uma data futura."},400,h);
     const ins=await e.DB.prepare("INSERT OR IGNORE INTO fechamentos_caixa(dia,total_entradas_centavos,total_saidas_centavos,saldo_centavos,resumo_json,observacoes,fechado_por) VALUES(?,?,?,?,?,?,?)").bind(dia,entradas,saidas,entradas-saidas,JSON.stringify(resumo),observacoes,(current as any).id).run();
     if(!ins.meta.changes)return json({error:"Este dia já foi fechado por outro usuário."},409,h);
