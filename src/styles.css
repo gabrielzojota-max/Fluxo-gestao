@@ -1507,3 +1507,5 @@ section{max-width:1600px;padding:38px clamp(22px,3.6vw,56px) 64px}
 .cash-closed-state small{font-size:11px;color:var(--fx-muted);line-height:1.45}
 .cash-close-button{width:100%;min-height:46px}
 @media(max-width:640px){.cash-closing-metrics{grid-template-columns:1fr 1fr}.cash-closing-metrics>div:last-child{grid-column:1/-1}.cash-closing-controls{align-items:stretch}.cash-closing-controls>div{min-width:100%}.cash-closing-controls>button{width:100%;min-height:44px}.cash-methods>span{font-size:11px}}
+
+.cash-count-field{display:grid;gap:7px;padding:14px;border:1px solid var(--fx-stroke);border-radius:13px;background:rgba(255,255,255,.025);margin:12px 0}.cash-count-field label{font-size:12px;font-weight:700;color:var(--fx-white)}.cash-count-field input{width:100%;border:1px solid var(--fx-stroke);border-radius:10px;background:rgba(255,255,255,.035);color:var(--fx-white);padding:12px;font:inherit;font-size:16px}.cash-count-field small{font-size:11px;color:var(--fx-muted)}.cash-count-field strong{font-size:13px}.cash-count-field strong.positive{color:var(--fx-green)}.cash-count-field strong.negative{color:#ff8585}
