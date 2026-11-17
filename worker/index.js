@@ -151,7 +151,7 @@ export default { async fetch(r, e) {
             const id = u.pathname.split("/")[3];
             const result = await e.DB.prepare("UPDATE clientes SET ativo=0,arquivado_em=CURRENT_TIMESTAMP WHERE id=? AND ativo=1").bind(id).run();
             if (!result.meta.changes) return json({ error: "Cliente não encontrado ou já excluído." }, 404, h);
-            await audit(e, current.id, "cliente_arquivado", id);
+            await audit(e, current.id, "cliente_arquivado", "clientes");
             return json({ status: "archived" }, 200, h);
         }
         if (r.method === "GET" && /^\/api\/clientes\/[^/]+$/.test(u.pathname)) {
@@ -161,7 +161,7 @@ export default { async fetch(r, e) {
                 return json({ error: "Cliente não encontrado." }, 404, h);
             const [vehicles, history] = await Promise.all([
                 e.DB.prepare("SELECT id,marca,modelo,ano,placa,cor,observacoes,foto_data FROM veiculos WHERE cliente_id=? ORDER BY criado_em DESC").bind(id).all(),
-                e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.valor_centavos,a.desconto_centavos,a.acrescimo_centavos,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='pendente'),0) pendente_centavos FROM atendimentos a LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.cliente_id=? ORDER BY a.data_hora DESC LIMIT 100").bind(id).all()
+                e.DB.prepare("SELECT a.id,a.data_hora,a.status,a.motivo_cancelamento,a.cancelado_em,a.valor_centavos,a.desconto_centavos,a.acrescimo_centavos,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='pendente'),0) pendente_centavos FROM atendimentos a LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.cliente_id=? ORDER BY a.data_hora DESC LIMIT 100").bind(id).all()
             ]);
             return json({ cliente: client, veiculos: vehicles.results ?? [], historico: history.results ?? [] }, 200, h);
         }
@@ -524,7 +524,7 @@ export default { async fetch(r, e) {
                     : await e.DB.prepare("UPDATE atendimentos SET status=?,motivo_cancelamento=NULL,cancelado_em=NULL WHERE id=?").bind(status, id).run();
                 if (!result.meta.changes)
                     return json({ error: "Atendimento não encontrado." }, 404, h);
-                await audit(e, current.id, status === "cancelado" ? "atendimento_cancelado" : "atendimento_status_alterado", id);
+                await audit(e, current.id, status === "cancelado" ? "atendimento_cancelado" : "atendimento_status_alterado", "atendimentos");
                 return json({ status }, 200, h);
             }
             catch (error) {
