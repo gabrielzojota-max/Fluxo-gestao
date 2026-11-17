@@ -1727,3 +1727,16 @@ button:focus-visible,[role="button"]:focus-visible{
   html{scroll-behavior:auto}
   *,*::before,*::after{transition:none!important;animation:none!important}
 }
+
+/* Client archive and appointment cancellation controls */
+.profile-header-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.danger-action{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:10px 14px;border:1px solid rgba(239,95,95,.35);border-radius:12px;background:rgba(239,95,95,.09);color:#ff9999;font:inherit;font-weight:650;cursor:pointer;transition:background .18s,border-color .18s}
+.danger-action:hover:not(:disabled){background:rgba(239,95,95,.16);border-color:rgba(239,95,95,.6)}
+.danger-action:disabled{opacity:.5;cursor:not-allowed}
+.cancel-appointment-panel{display:grid;gap:10px;padding:16px;margin-top:18px;border:1px solid rgba(239,95,95,.22);border-radius:14px;background:rgba(239,95,95,.045)}
+.cancel-appointment-panel label{font-weight:650}
+.cancel-appointment-panel textarea{width:100%;min-height:72px;resize:vertical}
+.cancel-appointment-panel .danger-action{justify-self:start}
+.cancel-reason-inline{color:#ffaaaa!important;white-space:normal}
+.cancellation-detail{border-color:rgba(239,95,95,.25)}
+@media(max-width:640px){.profile-header-actions{width:100%;justify-content:space-between}.profile-header-actions .danger-action{min-height:40px}.cancel-appointment-panel .danger-action{width:100%}}
