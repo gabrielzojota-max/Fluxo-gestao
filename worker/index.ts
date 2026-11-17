@@ -180,6 +180,7 @@ if(r.method==="GET"&&u.pathname==="/api/taxas-pagamento"){
    await audit(e,(current as any).id,"taxas_cartao_atualizadas","taxas_pagamento");return json({taxas:{credito,debito}},200,h)
   }catch(error){console.error("payment_fees_update_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível atualizar as taxas."},500,h)}
  }
+// Fechamento diário imutável: uma única confirmação por data.
 if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
   try{
    await e.DB.prepare("CREATE TABLE IF NOT EXISTS fechamentos_caixa(dia TEXT PRIMARY KEY,total_entradas_centavos INTEGER NOT NULL,total_saidas_centavos INTEGER NOT NULL,saldo_centavos INTEGER NOT NULL,resumo_json TEXT NOT NULL,observacoes TEXT,fechado_por TEXT NOT NULL,fechado_em TEXT NOT NULL DEFAULT(datetime('now','-3 hours')))").run();
