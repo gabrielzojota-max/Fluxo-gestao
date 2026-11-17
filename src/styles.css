@@ -2113,3 +2113,87 @@ section{padding-top:35px}
   .welcome-meta{max-width:116px}
   .welcome-copy h2{font-size:22px}
 }
+
+
+/* FLUXO — identidade por setor: cada área tem sua própria assinatura */
+section:has(.client-profile),section:has(.module-grid){
+  --module-accent:#bfe989;--module-accent-soft:#bfe98918;--module-border:#526d45;
+}
+section:has(.appointments-page){
+  --module-accent:#d5f19a;--module-accent-soft:#d5f19a16;--module-border:#63784a;
+}
+section:has(.finance-page){
+  --module-accent:#e8c77f;--module-accent-soft:#e8c77f16;--module-border:#796541;
+}
+section:has(.stock-page){
+  --module-accent:#8bd8c0;--module-accent-soft:#8bd8c016;--module-border:#426c60;
+}
+section:has(.reports-page){
+  --module-accent:#b7c4f2;--module-accent-soft:#b7c4f216;--module-border:#59688d;
+}
+section:has(.client-profile),section:has(.module-grid),section:has(.appointments-page),
+section:has(.finance-page),section:has(.stock-page),section:has(.reports-page){
+  --module-accent:var(--module-accent,#c8f17f);
+}
+section:has(.client-profile) .heading,
+section:has(.module-grid) .heading,
+section:has(.appointments-page) .heading,
+section:has(.finance-page) .heading,
+section:has(.stock-page) .heading,
+section:has(.reports-page) .heading{
+  background:linear-gradient(90deg,var(--module-accent),transparent 75%) left bottom/100% 2px no-repeat;
+}
+section:has(.client-profile) .heading>div>label,
+section:has(.module-grid) .heading>div>label,
+section:has(.appointments-page) .heading>div>label,
+section:has(.finance-page) .heading>div>label,
+section:has(.stock-page) .heading>div>label,
+section:has(.reports-page) .heading>div>label{color:var(--module-accent)}
+section:has(.client-profile) .form-card,
+section:has(.client-profile) .list-card,
+section:has(.module-grid) .form-card,
+section:has(.module-grid) .list-card,
+section:has(.appointments-page) .form-card,
+section:has(.appointments-page) .list-card,
+section:has(.finance-page) .form-card,
+section:has(.finance-page) .list-card,
+section:has(.stock-page) .form-card,
+section:has(.stock-page) .list-card,
+section:has(.reports-page) .form-card,
+section:has(.reports-page) .list-card{
+  border-color:color-mix(in srgb,var(--module-border) 55%,#26352a);
+}
+section:has(.finance-page) .finance-summary article{
+  border-color:#75613c;background:linear-gradient(145deg,#282319,#191811 78%);
+}
+section:has(.finance-page) .finance-summary article>div svg{color:#e8c77f}
+section:has(.finance-page) .finance-summary article>strong{color:#f2e4c5}
+section:has(.finance-page) .finance-toolbar .section-kicker{color:#e8c77f}
+section:has(.stock-page) .stock-summary article{
+  border-color:#426c60;background:linear-gradient(145deg,#172923,#111d19 78%);
+}
+section:has(.stock-page) .stock-summary strong{color:#a9ead7}
+section:has(.stock-page) .stock-status{border:1px solid #4a796c;background:#1a342d;color:#a9ead7}
+section:has(.reports-page) .report-period{
+  border-color:#4e5c7e;background:linear-gradient(145deg,#1a2030,#121923);
+}
+section:has(.reports-page) .report-presets button{
+  border-color:#4e5c7e;background:#202a3c;color:#d1daf7;
+}
+section:has(.reports-page) .report-presets button.active{
+  border-color:#aab9ee;background:#303d59;color:#eef1ff;
+}
+section:has(.appointments-page) .today-list{
+  border-color:#657b4b;
+  background:radial-gradient(ellipse at 100% 0%,#d5f19a20,transparent 45%),linear-gradient(145deg,#202d1d,#111a14 75%);
+}
+section:has(.appointments-page) .appointment-time{
+  border-color:#657b4b;background:linear-gradient(150deg,#34462a,#1b2919);
+}
+section:has(.module-grid) .form-card h2 svg,
+section:has(.client-profile) .profile-main>label{color:#c3e995}
+@media(max-width:700px){
+  section:has(.finance-page) .finance-summary article{background:linear-gradient(145deg,#282319,#191811)}
+  section:has(.stock-page) .stock-summary article{padding:12px 9px}
+  section:has(.reports-page) .report-period{border-radius:14px}
+}
