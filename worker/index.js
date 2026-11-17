@@ -470,6 +470,32 @@ export default { async fetch(r, e) {
                 return json({ error: "Não foi possível cadastrar o serviço." }, 500, h);
             }
         }
+        if (r.method === "PATCH" && /^\\/api\\/servicos\\/[^/]+$/.test(u.pathname)) {
+            try {
+                const id = u.pathname.split("/").pop() ?? "", b = await body(r), nome = String(b.nome ?? "").trim(), descricao = String(b.descricao ?? "").trim(), preco = Math.round(Number(b.preco ?? 0) * 100);
+                if (nome.length < 2 || nome.length > 100 || descricao.length > 500 || !Number.isSafeInteger(preco) || preco < 0 || preco > 100000000)
+                    return json({ error: "Confira nome, descrição e preço do serviço." }, 400, h);
+                const result = await e.DB.prepare("UPDATE catalogo_servicos SET nome=?,descricao=?,preco_sugerido_centavos=? WHERE id=? AND ativo=1").bind(nome, descricao || null, preco, id).run();
+                if (!result.meta.changes) return json({ error: "Serviço não encontrado ou inativo." }, 404, h);
+                await audit(e, current.id, "servico_atualizado", "catalogo_servicos");
+                return json({ status: "updated" }, 200, h);
+            } catch (error) {
+                console.error("servico_update_error", { message: error instanceof Error ? error.message : "unknown" });
+                return json({ error: "Não foi possível atualizar o serviço." }, 500, h);
+            }
+        }
+        if (r.method === "POST" && /^\\/api\\/servicos\\/[^/]+\\/excluir$/.test(u.pathname)) {
+            try {
+                const id = u.pathname.split("/")[3];
+                const result = await e.DB.prepare("UPDATE catalogo_servicos SET ativo=0 WHERE id=? AND ativo=1").bind(id).run();
+                if (!result.meta.changes) return json({ error: "Serviço não encontrado ou já excluído." }, 404, h);
+                await audit(e, current.id, "servico_excluido", "catalogo_servicos");
+                return json({ status: "deleted" }, 200, h);
+            } catch (error) {
+                console.error("servico_delete_error", { message: error instanceof Error ? error.message : "unknown" });
+                return json({ error: "Não foi possível excluir o serviço." }, 500, h);
+            }
+        }
         if (r.method === "GET" && u.pathname === "/api/atendimentos") {
             const rows = await e.DB.prepare("SELECT a.id,a.veiculo_id,a.data_hora,a.status,a.valor_centavos,a.observacoes,a.motivo_cancelamento,a.cancelado_em,c.nome cliente,c.telefone,COALESCE(v.modelo,'') veiculo,COALESCE(v.placa,'') placa,COALESCE((SELECT group_concat(s.descricao,', ') FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'') servicos,COALESCE((SELECT json_group_array(json_object('descricao',s.descricao,'valor_centavos',s.valor_centavos)) FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'[]') servicos_detalhados FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY a.data_hora DESC LIMIT 200").all();
             return json({ atendimentos: rows.results ?? [] }, 200, h);
