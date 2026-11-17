@@ -207,7 +207,7 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
   try{
    await e.DB.prepare("CREATE TABLE IF NOT EXISTS fechamentos_caixa(dia TEXT PRIMARY KEY,total_entradas_centavos INTEGER NOT NULL,total_saidas_centavos INTEGER NOT NULL,saldo_centavos INTEGER NOT NULL,resumo_json TEXT NOT NULL,observacoes TEXT,fechado_por TEXT NOT NULL,fechado_em TEXT NOT NULL DEFAULT(datetime('now','-3 hours')))").run();
    const payload=r.method==="POST"?await body(r):{};const dia=r.method==="GET"?(u.searchParams.get("dia")??""):String(payload.dia??"");
-   if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(dia)||Number.isNaN(Date.parse(dia+"T00:00:00Z")))return json({error:"Informe uma data válida."},400,h);
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(dia)||Number.isNaN(Date.parse(dia+"T00:00:00Z")))return json({error:"Informe uma data válida."},400,h);
    const [mov,byMethod,closed]=await Promise.all([
     e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN tipo='entrada' THEN valor_centavos ELSE 0 END),0) entradas_centavos,COALESCE(SUM(CASE WHEN tipo='saida' THEN valor_centavos ELSE 0 END),0) saidas_centavos,COUNT(*) quantidade FROM movimentacoes WHERE substr(ocorrido_em,1,10)=?").bind(dia).first<any>(),
     e.DB.prepare("SELECT tipo,COALESCE(metodo,'outro') metodo,SUM(valor_centavos) valor_centavos,COUNT(*) quantidade FROM movimentacoes WHERE substr(ocorrido_em,1,10)=? GROUP BY tipo,COALESCE(metodo,'outro') ORDER BY tipo,metodo").bind(dia).all<any>(),
