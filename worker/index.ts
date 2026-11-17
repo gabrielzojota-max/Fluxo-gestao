@@ -195,7 +195,8 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
    if(r.method==="POST"){
     if(closed)return json({error:"Este dia já foi fechado. O fechamento existente foi preservado.",fechamento:closed,resumo:JSON.parse(String(closed.resumo_json||"{}"))},409,h);
     const observacoes=String(payload.observacoes??"").trim().slice(0,500),rawCount=payload.dinheiro_contado_reais,dinheiroContado=rawCount===null||rawCount===undefined||rawCount===""?null:Math.round(Number(rawCount)*100);
-    if(dinheiroContado!==null&&(!Number.isSafeInteger(dinheiroContado)||dinheiroContado<0||dinheiroContado>100000000000))return json({error:"Informe um valor contado válido."},400,h);
+    if(dinheiroContado===null)return json({error:"Informe quanto dinheiro físico foi contado. Se não houver dinheiro em caixa, informe 0."},400,h);
+    if(!Number.isSafeInteger(dinheiroContado)||dinheiroContado<0||dinheiroContado>100000000000)return json({error:"Informe um valor contado válido."},400,h);
     const diferencaDinheiro=dinheiroContado===null?null:dinheiroContado-dinheiroEsperado;
     if(dia>new Date(Date.now()-3*60*60*1000).toISOString().slice(0,10))return json({error:"Não é possível fechar uma data futura."},400,h);
     const ins=await e.DB.prepare("INSERT OR IGNORE INTO fechamentos_caixa(dia,total_entradas_centavos,total_saidas_centavos,saldo_centavos,resumo_json,observacoes,fechado_por,dinheiro_contado_centavos,diferenca_dinheiro_centavos) VALUES(?,?,?,?,?,?,?,?,?)").bind(dia,entradas,saidas,entradas-saidas,JSON.stringify(resumo),observacoes,(current as any).id,dinheiroContado,diferencaDinheiro).run();
