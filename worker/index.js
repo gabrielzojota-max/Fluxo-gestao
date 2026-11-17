@@ -110,6 +110,26 @@ export default { async fetch(r, e) {
         const current = await userFrom(r, e);
         if (u.pathname.startsWith("/api/") && u.pathname !== "/api/health" && u.pathname !== "/api/auth/me" && u.pathname !== "/api/auth/login-info" && u.pathname.startsWith("/api/") && !u.pathname.startsWith("/api/auth/") && !current)
             return json({ error: "Sessão expirada. Entre novamente." }, 401, h);
+        if (r.method === "POST" && u.pathname === "/api/usuarios") {
+            try {
+                if (current?.papel !== "socio")
+                    return json({ error: "Apenas sócios podem cadastrar outros sócios." }, 403, h);
+                const b = await body(r), nome = String(b.nome ?? "").trim(), email = String(b.email ?? "").trim().toLowerCase(), senha = String(b.senha ?? "");
+                if (nome.length < 2 || nome.length > 100 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || senha.length < 8 || senha.length > 128)
+                    return json({ error: "Confira nome, e-mail e senha (8 a 128 caracteres)." }, 400, h);
+                const exists = await e.DB.prepare("SELECT id FROM usuarios WHERE email=?").bind(email).first();
+                if (exists)
+                    return json({ error: "Já existe uma conta com este e-mail." }, 409, h);
+                const senhaHash = await hashPassword(senha), id = crypto.randomUUID();
+                await e.DB.prepare("INSERT INTO usuarios(id,nome,email,senha_hash,papel,status) VALUES(?,?,?,?,'socio','ativo')").bind(id, nome, email, senhaHash).run();
+                await audit(e, current.id, "socio_criado", "usuarios");
+                return json({ usuario: { id, nome, email, papel: "socio", status: "ativo" } }, 201, h);
+            }
+            catch (error) {
+                console.error("user_create_error", { message: error instanceof Error ? error.message : "unknown" });
+                return json({ error: "Não foi possível criar o acesso do sócio." }, 500, h);
+            }
+        }
         if (r.method === "GET" && u.pathname === "/api/dashboard") {
             const [clients, appointments, today, revenue, monthExpenses, weekRevenue, weekExpenses, prevWeekRevenue, prevWeekExpenses, openAppointments, services] = await Promise.all([
                 e.DB.prepare("SELECT COUNT(*) total FROM clientes").first(),
