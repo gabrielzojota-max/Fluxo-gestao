@@ -180,7 +180,31 @@ if(r.method==="GET"&&u.pathname==="/api/taxas-pagamento"){
    await audit(e,(current as any).id,"taxas_cartao_atualizadas","taxas_pagamento");return json({taxas:{credito,debito}},200,h)
   }catch(error){console.error("payment_fees_update_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível atualizar as taxas."},500,h)}
  }
-if(r.method==="GET"&&u.pathname==="/api/financeiro"){
+if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
+  try{
+   await e.DB.prepare("CREATE TABLE IF NOT EXISTS fechamentos_caixa(dia TEXT PRIMARY KEY,total_entradas_centavos INTEGER NOT NULL,total_saidas_centavos INTEGER NOT NULL,saldo_centavos INTEGER NOT NULL,resumo_json TEXT NOT NULL,observacoes TEXT,fechado_por TEXT NOT NULL,fechado_em TEXT NOT NULL DEFAULT(datetime('now','-3 hours')))").run();
+   const dia=r.method==="GET"?(u.searchParams.get("dia")??""):String((await body(r)).dia??"");
+   if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(dia)||Number.isNaN(Date.parse(dia+"T00:00:00Z")))return json({error:"Informe uma data válida."},400,h);
+   const [mov,byMethod,closed]=await Promise.all([
+    e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN tipo='entrada' THEN valor_centavos ELSE 0 END),0) entradas_centavos,COALESCE(SUM(CASE WHEN tipo='saida' THEN valor_centavos ELSE 0 END),0) saidas_centavos,COUNT(*) quantidade FROM movimentacoes WHERE substr(ocorrido_em,1,10)=?").bind(dia).first<any>(),
+    e.DB.prepare("SELECT tipo,COALESCE(metodo,'outro') metodo,SUM(valor_centavos) valor_centavos,COUNT(*) quantidade FROM movimentacoes WHERE substr(ocorrido_em,1,10)=? GROUP BY tipo,COALESCE(metodo,'outro') ORDER BY tipo,metodo").bind(dia).all<any>(),
+    e.DB.prepare("SELECT f.*,u.nome fechado_por_nome FROM fechamentos_caixa f LEFT JOIN usuarios u ON u.id=f.fechado_por WHERE f.dia=?").bind(dia).first<any>()
+   ]);
+   const entradas=Number(mov?.entradas_centavos??0),saidas=Number(mov?.saidas_centavos??0),resumo={dia,entradas_centavos:entradas,saidas_centavos:saidas,saldo_centavos:entradas-saidas,quantidade:Number(mov?.quantidade??0),por_metodo:byMethod.results??[]};
+   if(r.method==="POST"){
+    if(closed)return json({error:"Este dia já foi fechado. O fechamento existente foi preservado.",fechamento:closed,resumo:JSON.parse(String(closed.resumo_json||"{}"))},409,h);
+    const b=await body(r),observacoes=String(b.observacoes??"").trim().slice(0,500);
+    if(dia>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10))return json({error:"Não é possível fechar uma data futura."},400,h);
+    const ins=await e.DB.prepare("INSERT OR IGNORE INTO fechamentos_caixa(dia,total_entradas_centavos,total_saidas_centavos,saldo_centavos,resumo_json,observacoes,fechado_por) VALUES(?,?,?,?,?,?,?)").bind(dia,entradas,saidas,entradas-saidas,JSON.stringify(resumo),observacoes,(current as any).id).run();
+    if(!ins.meta.changes)return json({error:"Este dia já foi fechado por outro usuário."},409,h);
+    await audit(e,(current as any).id,"caixa_fechado_"+dia,"fechamentos_caixa");
+    const saved=await e.DB.prepare("SELECT f.*,u.nome fechado_por_nome FROM fechamentos_caixa f LEFT JOIN usuarios u ON u.id=f.fechado_por WHERE f.dia=?").bind(dia).first<any>();
+    return json({resumo,fechamento:saved,fechado:true},201,h)
+   }
+   return json({resumo,fechamento:closed??null},200,h)
+  }catch(error){console.error("cash_closing_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível carregar ou fechar o caixa."},500,h)}
+ }
+ if(r.method==="GET"&&u.pathname==="/api/financeiro"){
   const [payments,open]=await Promise.all([
    e.DB.prepare("SELECT p.id,p.atendimento_id,p.valor_centavos,p.taxa_centavos,p.liquido_centavos,p.metodo,p.modalidade,p.status,p.recebido_em,p.criado_em,c.nome cliente,COALESCE(v.modelo,'') veiculo,a.data_hora FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id ORDER BY CASE p.status WHEN 'pendente' THEN 0 ELSE 1 END,p.criado_em DESC LIMIT 150").all<any>(),
    e.DB.prepare("SELECT a.id,a.data_hora,a.valor_centavos,c.nome cliente,COALESCE(v.modelo,'') veiculo,COALESCE((SELECT json_group_array(json_object('descricao',s.descricao,'valor_centavos',s.valor_centavos)) FROM atendimento_servicos s WHERE s.atendimento_id=a.id),'[]') servicos_detalhados,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) recebido_centavos,COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='pendente'),0) pendente_centavos,MAX(0,a.valor_centavos-COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0)) saldo_centavos,MAX(0,a.valor_centavos-COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status IN('pendente','recebido')),0)) disponivel_centavos,COALESCE((SELECT json_group_array(json_object('id',p.id,'valor_centavos',p.valor_centavos,'status',p.status,'metodo',p.metodo,'modalidade',p.modalidade,'criado_em',p.criado_em,'recebido_em',p.recebido_em)) FROM pagamentos p WHERE p.atendimento_id=a.id),'[]') pagamentos_detalhados FROM atendimentos a JOIN clientes c ON c.id=a.cliente_id LEFT JOIN veiculos v ON v.id=a.veiculo_id WHERE a.status<>'cancelado' AND a.valor_centavos>COALESCE((SELECT SUM(p.valor_centavos) FROM pagamentos p WHERE p.atendimento_id=a.id AND p.status='recebido'),0) ORDER BY a.data_hora DESC LIMIT 100").all<any>()
