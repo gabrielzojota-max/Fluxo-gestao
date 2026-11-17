@@ -2193,3 +2193,105 @@ section:has(.client-profile) .profile-main>label{color:#c3e995}
   section:has(.stock-page) .stock-summary article{padding:12px 9px}
   section:has(.reports-page) .report-period{border-radius:14px}
 }
+
+
+/* FLUXO — formulários e fichas de veículos/atendimentos */
+.appointment-form{
+  position:relative;overflow:hidden;
+  border-color:#60794b!important;
+  background:radial-gradient(ellipse at 100% 0%,#c8f17f14,transparent 42%),linear-gradient(145deg,#1a281d,#101812 78%)!important;
+}
+.appointment-form>.list-head{align-items:center;padding-bottom:17px;margin-bottom:19px;border-bottom:1px solid #526b454d}
+.appointment-form .list-head h2{display:flex;align-items:center;gap:9px}
+.appointment-form .list-head h2 svg{color:#c8f17f}
+.appointment-form .schedule-field{padding:14px;border:1px solid #3b5140;border-radius:13px;background:linear-gradient(145deg,#17241b,#101812)}
+.appointment-form .schedule-field>label{display:block;margin-bottom:9px;color:#c8ed9b;font-size:12px;letter-spacing:1px;text-transform:uppercase}
+.appointment-form .field-help{margin:0 0 12px;color:#9eafa1;font-size:12px;line-height:1.55}
+.appointment-form .appointment-service-line{padding:12px;margin:10px 0;border:1px solid #405640;border-radius:12px;background:#0b130e}
+.appointment-form .appointment-service-line input,.appointment-form .appointment-service-line select{min-width:0}
+.appointment-form .wide{grid-column:1/-1}
+.detail-modal{
+  width:min(680px,calc(100vw - 28px));
+  max-height:min(88dvh,900px);overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-color:#536c45 #101812;
+}
+.detail-modal .modal-heading{
+  position:sticky;top:-1px;z-index:3;margin:-1px -1px 18px;padding:17px 19px;
+  border-bottom:1px solid #526b454d;
+  background:linear-gradient(100deg,#1b2a1eF5,#111a14F5);
+  backdrop-filter:blur(14px);
+}
+.detail-modal .modal-heading label{color:#c8ed9b;font-size:10px;letter-spacing:2px}
+.detail-modal .modal-heading h2{margin-top:5px;font:700 22px 'Space Grotesk',sans-serif;letter-spacing:-.6px}
+.detail-modal .detail-grid{gap:10px;margin:16px 0}
+.detail-modal .detail-grid>div{
+  min-width:0;padding:13px 14px;border:1px solid #354a39;border-radius:12px;
+  background:linear-gradient(145deg,#1a281d,#111a14);
+}
+.detail-modal .detail-grid small{display:block;margin-bottom:7px;color:#9eafa1;font-size:10px;letter-spacing:1.2px;text-transform:uppercase}
+.detail-modal .detail-grid b{display:block;overflow-wrap:anywhere;color:#edf5ec;font-size:13px;line-height:1.45}
+.vehicle-detail-photo{
+  display:block;width:100%;max-height:260px;object-fit:cover;
+  border:1px solid #526b45;border-radius:14px;background:#0a110c;
+}
+.vehicle-photo-empty{
+  min-height:155px;display:grid;place-content:center;justify-items:center;gap:10px;
+  border:1px dashed #60794b;border-radius:14px;color:#a9bbab;
+  background:repeating-linear-gradient(135deg,#ffffff05 0 1px,transparent 1px 9px),#101a13;
+}
+.vehicle-photo-empty svg{color:#c8ed9b}
+.detail-modal .data-form{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 13px;
+  margin:16px 0;padding:16px;border:1px solid #526b454d;border-radius:14px;background:#0c150f88;
+}
+.detail-modal .data-form label{align-self:end;color:#c3d2c3;font-size:12px}
+.detail-modal .data-form input{width:100%;min-width:0}
+.detail-modal .data-form label:first-child,.detail-modal .data-form label:nth-of-type(1){grid-column:1/-1}
+.detail-modal .data-form label:nth-of-type(1)+input{grid-column:1/-1}
+.detail-modal .data-form .modal-actions{grid-column:1/-1}
+.appointment-modal-status{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:15px 16px;border:1px solid #5b7147;border-radius:13px;
+  background:linear-gradient(110deg,#293b25,#152119);
+}
+.appointment-modal-status>div{display:grid;gap:4px;text-align:right}
+.appointment-modal-status>div strong{font:700 22px 'Space Grotesk',sans-serif;color:#e7f4d8}
+.appointment-modal-status>div small{color:#a9b9a9;font-size:11px}
+.appointment-service-breakdown{
+  margin:14px 0;padding:16px;border:1px solid #405640;border-radius:14px;
+  background:linear-gradient(145deg,#17241b,#101812);
+}
+.service-breakdown-heading,.service-breakdown-row,.service-breakdown-total{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.service-breakdown-heading{padding-bottom:12px;border-bottom:1px solid #405640;color:#d9e8d8}
+.service-breakdown-heading span{color:#a8b8a8;font-size:11px}
+.service-breakdown-row{padding:11px 0;border-bottom:1px solid #ffffff0c;color:#c4d1c4;font-size:13px}
+.service-breakdown-row b{color:#edf5ec;white-space:nowrap}
+.service-breakdown-total{padding-top:14px;color:#c8ed9b}
+.service-breakdown-total strong{font:700 20px 'Space Grotesk',sans-serif;color:#e3f5cc}
+.vehicle-history{margin:18px 0;padding:15px;border:1px solid #405640;border-radius:14px;background:#0d1710}
+.vehicle-history h3{margin:0 0 11px;font:700 14px 'Space Grotesk',sans-serif;color:#dcebd9}
+.vehicle-history-row{
+  display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 2px;border:0;border-top:1px solid #ffffff10;background:transparent;color:inherit;text-align:left;cursor:pointer;
+}
+.vehicle-history-row>span:first-child{display:grid;gap:5px;min-width:0}
+.vehicle-history-row b{font-size:12px;color:#edf5ec}
+.vehicle-history-row small{font-size:11px;color:#9eafa1}
+.detail-modal .photo-upload-large{display:flex;align-items:center;justify-content:center;min-height:45px;margin:12px 0;padding:11px;border:1px dashed #718b55;border-radius:11px;background:#c8f17f0b;color:#d6efb5}
+.detail-modal .modal-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:9px;margin-top:17px;padding-top:14px;border-top:1px solid #ffffff12}
+@media(max-width:640px){
+  .detail-modal{width:calc(100vw - 18px);max-height:calc(100dvh - 22px);padding:14px;border-radius:16px}
+  .detail-modal .modal-heading{margin:-14px -14px 14px;padding:15px 14px}
+  .detail-modal .modal-heading h2{font-size:19px}
+  .detail-modal .detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .detail-modal .detail-grid>div{padding:11px 10px}
+  .detail-modal .data-form{grid-template-columns:1fr;padding:12px}
+  .detail-modal .data-form label,.detail-modal .data-form input{grid-column:1/-1}
+  .detail-modal .modal-actions{display:grid;grid-template-columns:1fr}
+  .detail-modal .modal-actions>*{width:100%;min-height:43px}
+  .appointment-modal-status{padding:12px}
+  .appointment-modal-status>div strong{font-size:19px}
+  .appointment-form>.list-head{align-items:flex-start}
+}
