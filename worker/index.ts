@@ -53,7 +53,7 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
   try{
    if((current as any)?.papel!=="socio")return json({error:"Apenas sócios podem cadastrar outros sócios."},403,h);
    const b=await body(r),nome=String(b.nome??"").trim(),email=String(b.email??"").trim().toLowerCase(),senha=String(b.senha??"");
-   if(nome.length<2||nome.length>100||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||senha.length<8||senha.length>128)return json({error:"Confira nome, e-mail e senha (8 a 128 caracteres)."},400,h);
+   if(nome.length<2||nome.length>100||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||senha.length<8||senha.length>128)return json({error:"Confira nome, e-mail e senha (8 a 128 caracteres)."},400,h);
    const exists=await e.DB.prepare("SELECT id FROM usuarios WHERE email=?").bind(email).first<any>();
    if(exists)return json({error:"Já existe uma conta com este e-mail."},409,h);
    const senhaHash=await hashPassword(senha),id=crypto.randomUUID();
