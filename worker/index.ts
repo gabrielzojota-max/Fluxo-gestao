@@ -191,12 +191,14 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
     e.DB.prepare("SELECT tipo,COALESCE(metodo,'outro') metodo,SUM(valor_centavos) valor_centavos,COUNT(*) quantidade FROM movimentacoes WHERE substr(ocorrido_em,1,10)=? GROUP BY tipo,COALESCE(metodo,'outro') ORDER BY tipo,metodo").bind(dia).all<any>(),
     e.DB.prepare("SELECT f.*,u.nome fechado_por_nome FROM fechamentos_caixa f LEFT JOIN usuarios u ON u.id=f.fechado_por WHERE f.dia=?").bind(dia).first<any>()
    ]);
-   const entradas=Number(mov?.entradas_centavos??0),saidas=Number(mov?.saidas_centavos??0),resumo={dia,entradas_centavos:entradas,saidas_centavos:saidas,saldo_centavos:entradas-saidas,quantidade:Number(mov?.quantidade??0),por_metodo:byMethod.results??[]};
+   const entradas=Number(mov?.entradas_centavos??0),saidas=Number(mov?.saidas_centavos??0),methods=byMethod.results??[],dinheiroEsperado=methods.reduce((sum:number,m:any)=>sum+(m.metodo==="dinheiro"?(m.tipo==="entrada"?1:-1)*Number(m.valor_centavos||0):0),0),resumo={dia,entradas_centavos:entradas,saidas_centavos:saidas,saldo_centavos:entradas-saidas,dinheiro_esperado_centavos:dinheiroEsperado,quantidade:Number(mov?.quantidade??0),por_metodo:methods};
    if(r.method==="POST"){
     if(closed)return json({error:"Este dia já foi fechado. O fechamento existente foi preservado.",fechamento:closed,resumo:JSON.parse(String(closed.resumo_json||"{}"))},409,h);
-    const observacoes=String(payload.observacoes??"").trim().slice(0,500);
+    const observacoes=String(payload.observacoes??"").trim().slice(0,500),rawCount=payload.dinheiro_contado_reais,dinheiroContado=rawCount===null||rawCount===undefined||rawCount===""?null:Math.round(Number(rawCount)*100);
+    if(dinheiroContado!==null&&(!Number.isSafeInteger(dinheiroContado)||dinheiroContado<0||dinheiroContado>100000000000))return json({error:"Informe um valor contado válido."},400,h);
+    const diferencaDinheiro=dinheiroContado===null?null:dinheiroContado-dinheiroEsperado;
     if(dia>new Date(Date.now()-3*60*60*1000).toISOString().slice(0,10))return json({error:"Não é possível fechar uma data futura."},400,h);
-    const ins=await e.DB.prepare("INSERT OR IGNORE INTO fechamentos_caixa(dia,total_entradas_centavos,total_saidas_centavos,saldo_centavos,resumo_json,observacoes,fechado_por) VALUES(?,?,?,?,?,?,?)").bind(dia,entradas,saidas,entradas-saidas,JSON.stringify(resumo),observacoes,(current as any).id).run();
+    const ins=await e.DB.prepare("INSERT OR IGNORE INTO fechamentos_caixa(dia,total_entradas_centavos,total_saidas_centavos,saldo_centavos,resumo_json,observacoes,fechado_por,dinheiro_contado_centavos,diferenca_dinheiro_centavos) VALUES(?,?,?,?,?,?,?,?,?)").bind(dia,entradas,saidas,entradas-saidas,JSON.stringify(resumo),observacoes,(current as any).id,dinheiroContado,diferencaDinheiro).run();
     if(!ins.meta.changes)return json({error:"Este dia já foi fechado por outro usuário."},409,h);
     await audit(e,(current as any).id,"caixa_fechado_"+dia,"fechamentos_caixa");
     const saved=await e.DB.prepare("SELECT f.*,u.nome fechado_por_nome FROM fechamentos_caixa f LEFT JOIN usuarios u ON u.id=f.fechado_por WHERE f.dia=?").bind(dia).first<any>();
