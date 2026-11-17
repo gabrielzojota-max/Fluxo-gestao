@@ -513,6 +513,29 @@ export default { async fetch(r, e) {
                 return json({ error: "Não foi possível criar o atendimento." }, 500, h);
             }
         }
+        if (r.method === "POST" && /^\/api\/atendimentos\/[^/]+\/excluir$/.test(u.pathname)) {
+            try {
+                const id = u.pathname.split("/")[3];
+                const appointment = await e.DB.prepare("SELECT id,status FROM atendimentos WHERE id=?").bind(id).first();
+                if (!appointment) return json({ error: "Agendamento não encontrado." }, 404, h);
+                if (!["agendado", "cancelado"].includes(appointment.status)) return json({ error: "Só é possível excluir agendamentos ainda não iniciados ou já cancelados." }, 409, h);
+                const [payments, stock, files] = await Promise.all([
+                    e.DB.prepare("SELECT COUNT(*) total FROM pagamentos WHERE atendimento_id=?").bind(id).first(),
+                    e.DB.prepare("SELECT COUNT(*) total FROM movimentacoes_estoque WHERE atendimento_id=?").bind(id).first(),
+                    e.DB.prepare("SELECT COUNT(*) total FROM arquivos WHERE atendimento_id=?").bind(id).first()
+                ]);
+                if (Number(payments?.total||0)>0 || Number(stock?.total||0)>0 || Number(files?.total||0)>0) return json({ error: "Este atendimento possui registros financeiros, de estoque ou arquivos vinculados e não pode ser excluído." }, 409, h);
+                await e.DB.batch([
+                    e.DB.prepare("DELETE FROM atendimento_servicos WHERE atendimento_id=?").bind(id),
+                    e.DB.prepare("DELETE FROM atendimentos WHERE id=?").bind(id)
+                ]);
+                await audit(e, current.id, "atendimento_excluido", "atendimentos");
+                return json({ status: "deleted" }, 200, h);
+            } catch (error) {
+                console.error("appointment_delete_error", { message: error instanceof Error ? error.message : "unknown" });
+                return json({ error: "Não foi possível excluir o agendamento." }, 500, h);
+            }
+        }
         if (r.method === "PATCH" && u.pathname.startsWith("/api/atendimentos/")) {
             try {
                 const id = u.pathname.split("/").pop() ?? "", b = await body(r), status = String(b.status ?? ""), reason = String(b.motivo_cancelamento ?? "").trim();
