@@ -2405,3 +2405,38 @@ section:has(.client-profile) .profile-main>label{color:#c3e995}
   .detail-modal .detail-grid{grid-template-columns:minmax(0,1fr)}
   .profile-header-actions{align-items:stretch;flex-direction:column}
 }
+
+
+/* FLUXO · reserva financeira para melhorias */
+.reserve-panel{border-color:#40583c!important;background:radial-gradient(ellipse at 100% 0%,#29432955,transparent 45%),linear-gradient(145deg,#17231a,#121a15)!important}
+.reserve-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:20px}
+.reserve-heading>div:first-child{min-width:0}
+.reserve-heading h2{display:flex;align-items:center;gap:9px;margin:6px 0;font:800 17px Manrope}
+.reserve-heading h2 svg{color:#b8e987}
+.reserve-heading p{max-width:520px;margin:0;color:#94a396;font-size:12px;line-height:1.55}
+.reserve-balance{flex:none;min-width:185px;padding:15px 17px;border:1px solid #49633f;border-radius:12px;background:linear-gradient(145deg,#263b27,#18251b);text-align:right}
+.reserve-balance small{display:block;color:#b0c5a6;font-size:10px;letter-spacing:.8px;text-transform:uppercase}
+.reserve-balance strong{display:block;margin-top:6px;color:#d5f3aa;font:800 25px Manrope;letter-spacing:-.5px}
+.reserve-form{display:grid;grid-template-columns:minmax(180px,.9fr) minmax(130px,.65fr) minmax(200px,1.4fr) auto;align-items:end;gap:10px;padding:15px;border:1px solid #304333;border-radius:12px;background:#0f1711}
+.reserve-form>div{display:grid;gap:7px;min-width:0}
+.reserve-form label{font-size:10px;color:#c1d0c2;font-weight:700}
+.reserve-form input,.reserve-form select{width:100%;min-width:0;min-height:42px;padding:10px 11px;border:1px solid #3b5140;border-radius:8px;background:#0b130e;color:#edf5ec;font:13px 'DM Sans',sans-serif}
+.reserve-form input:focus,.reserve-form select:focus{outline:none;border-color:#a9dc70;box-shadow:0 0 0 3px #a9dc7020}
+.reserve-form .primary{min-height:43px;white-space:nowrap}
+.reserve-footnote{margin:11px 2px 18px;color:#829486;font-size:10px;line-height:1.5}
+.reserve-history{border-top:1px solid #2c3b30;padding-top:14px}
+.reserve-history-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.reserve-history-title b{font:700 12px Manrope;color:#dce8dc}
+.reserve-history-title small{font-size:10px;color:#839286}
+.reserve-empty{padding:17px 10px;text-align:center;color:#8d9b90;font-size:11px;line-height:1.5}
+.reserve-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:11px;padding:12px 3px;border-top:1px solid #29382d}
+.reserve-movement-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:9px}
+.reserve-movement-icon.deposit{background:#253b28;color:#bce88a}
+.reserve-movement-icon.use{background:#3a3020;color:#e8c77f}
+.reserve-row>div{min-width:0;display:grid;gap:4px}
+.reserve-row b{font-size:11px;color:#e5eee5}
+.reserve-row small{font-size:10px;color:#89988d;line-height:1.45;overflow-wrap:anywhere}
+.reserve-row>strong{font:700 12px Manrope;white-space:nowrap}
+.reserve-in{color:#bce88a}.reserve-out{color:#e9c77f}
+@media(max-width:950px){.reserve-form{grid-template-columns:repeat(2,minmax(0,1fr))}.reserve-form .reserve-description{grid-column:1/-1}.reserve-form>.primary{grid-column:1/-1;width:100%;justify-content:center}}
+@media(max-width:700px){.reserve-heading{flex-direction:column;gap:13px}.reserve-balance{width:100%;text-align:left}.reserve-form{grid-template-columns:minmax(0,1fr);padding:12px}.reserve-form .reserve-description,.reserve-form>.primary{grid-column:1}.reserve-form>.primary{min-height:48px}.reserve-row{grid-template-columns:32px minmax(0,1fr);gap:9px}.reserve-row>strong{grid-column:2;justify-self:start}.reserve-history-title{align-items:flex-start;flex-direction:column;gap:4px}}
