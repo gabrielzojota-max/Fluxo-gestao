@@ -149,10 +149,11 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
    if(r.method==="POST"){
     const b=await body(r),tipo=String(b.tipo??""),descricao=String(b.descricao??"").trim(),valor=Math.round(Number(b.valor_reais??0)*100);
     if(!["aporte","uso"].includes(tipo)||descricao.length<2||descricao.length>160||!Number.isSafeInteger(valor)||valor<=0||valor>100000000)return json({error:"Informe o tipo, uma descrição e um valor válido para a reserva."},400,h);
-    const id=crypto.randomUUID(),movementId=crypto.randomUUID(),label=(tipo==="aporte"?"Depósito na reserva · ":"Uso da reserva em melhoria · ")+descricao;
+    const id=crypto.randomUUID(),movementId=crypto.randomUUID(),expenseId=crypto.randomUUID(),label="Depósito na reserva · "+descricao;
     const batch=await e.DB.batch([
      e.DB.prepare("INSERT INTO reserva_movimentacoes(id,tipo,descricao,valor_centavos,criado_por) SELECT ?,?,?,?,? WHERE ?='aporte' OR ?<=COALESCE((SELECT SUM(CASE WHEN tipo='aporte' THEN valor_centavos ELSE -valor_centavos END) FROM reserva_movimentacoes),0)").bind(id,tipo,descricao,valor,(current as any).id,tipo,valor),
-     e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?,'saida','reserva',?,?,?,'outro',? WHERE EXISTS(SELECT 1 FROM reserva_movimentacoes WHERE id=?)").bind(movementId,id,label,valor,(current as any).id,id)
+     e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?,'saida','reserva',?,?,?,'outro',? WHERE ?='aporte' AND EXISTS(SELECT 1 FROM reserva_movimentacoes WHERE id=?)").bind(movementId,id,label,valor,(current as any).id,tipo,id),
+     e.DB.prepare("INSERT INTO despesas(id,descricao,valor_centavos,categoria,status,metodo,pago_em,criado_por) SELECT ?,?,?, 'melhorias','paga','outro',datetime('now','-3 hours'),? WHERE ?='uso' AND EXISTS(SELECT 1 FROM reserva_movimentacoes WHERE id=?)").bind(expenseId,descricao,valor,(current as any).id,tipo,id)
     ]);
     if(!batch[0].meta.changes)return json({error:"O valor informado é maior que o saldo guardado na reserva."},400,h);
     await audit(e,(current as any).id,tipo==="aporte"?"reserva_aporte":"reserva_uso","reserva_movimentacoes");
