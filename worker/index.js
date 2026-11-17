@@ -324,7 +324,9 @@ export default { async fetch(r, e) {
                     if (closed)
                         return json({ error: "Este dia já foi fechado. O fechamento existente foi preservado.", fechamento: closed, resumo: JSON.parse(String(closed.resumo_json || "{}")) }, 409, h);
                     const observacoes = String(payload.observacoes ?? "").trim().slice(0, 500), rawCount = payload.dinheiro_contado_reais, dinheiroContado = rawCount === null || rawCount === undefined || rawCount === "" ? null : Math.round(Number(rawCount) * 100);
-                    if (dinheiroContado !== null && (!Number.isSafeInteger(dinheiroContado) || dinheiroContado < 0 || dinheiroContado > 100000000000))
+                    if (dinheiroContado === null)
+                        return json({ error: "Informe quanto dinheiro físico foi contado. Se não houver dinheiro em caixa, informe 0." }, 400, h);
+                    if (!Number.isSafeInteger(dinheiroContado) || dinheiroContado < 0 || dinheiroContado > 100000000000)
                         return json({ error: "Informe um valor contado válido." }, 400, h);
                     const diferencaDinheiro = dinheiroContado === null ? null : dinheiroContado - dinheiroEsperado;
                     if (dia > new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10))
