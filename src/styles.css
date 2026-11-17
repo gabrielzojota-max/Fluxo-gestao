@@ -1481,3 +1481,29 @@ section{max-width:1600px;padding:38px clamp(22px,3.6vw,56px) 64px}
 .due-action>small{display:block;color:var(--fx-muted);font-size:10px;text-align:right;margin:4px 0 8px}
 .due-action button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:680px){.finance-reconcile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.finance-reconcile-detail{grid-template-columns:1fr}.due-action>small{text-align:left}}
+
+
+/* Fechamento diário do caixa */
+.cash-closing-panel{margin:18px 0}
+.cash-closing-controls{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin:16px 0}
+.cash-closing-controls>div{display:flex;flex-direction:column;gap:6px;min-width:190px;flex:1}
+.cash-closing-controls label,.cash-notes label{font-size:12px;font-weight:650;color:var(--fx-muted)}
+.cash-closing-controls input,.cash-notes textarea{width:100%;border:1px solid var(--fx-stroke);border-radius:12px;background:rgba(255,255,255,.035);color:var(--fx-white);padding:12px;font:inherit}
+.cash-closing-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+.cash-closing-metrics>div{display:flex;flex-direction:column;gap:6px;padding:14px;border:1px solid var(--fx-stroke);border-radius:14px;background:rgba(255,255,255,.025);min-width:0}
+.cash-closing-metrics small{font-size:11px;color:var(--fx-muted)}
+.cash-closing-metrics strong{font-size:clamp(16px,2vw,22px);color:var(--fx-white);overflow-wrap:anywhere}
+.cash-closing-metrics .positive strong{color:var(--fx-green)}
+.cash-closing-metrics .negative strong{color:#ff8585}
+.cash-methods{display:flex;flex-direction:column;gap:9px;padding:14px 0;border-top:1px solid var(--fx-stroke)}
+.cash-methods>b{font-size:12px;color:var(--fx-muted);margin-bottom:2px}
+.cash-methods>span{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--fx-white)}
+.cash-methods>span strong{white-space:nowrap}
+.cash-methods>small{color:var(--fx-muted);font-size:12px}
+.cash-notes{display:flex;flex-direction:column;gap:7px;margin:12px 0}
+.cash-closed-state{display:flex;align-items:flex-start;gap:10px;padding:14px;border-radius:13px;border:1px solid rgba(132,204,22,.25);background:rgba(132,204,22,.07);color:var(--fx-green)}
+.cash-closed-state>div{display:flex;flex-direction:column;gap:5px}
+.cash-closed-state b{font-size:13px}
+.cash-closed-state small{font-size:11px;color:var(--fx-muted);line-height:1.45}
+.cash-close-button{width:100%;min-height:46px}
+@media(max-width:640px){.cash-closing-metrics{grid-template-columns:1fr 1fr}.cash-closing-metrics>div:last-child{grid-column:1/-1}.cash-closing-controls{align-items:stretch}.cash-closing-controls>div{min-width:100%}.cash-closing-controls>button{width:100%;min-height:44px}.cash-methods>span{font-size:11px}}
