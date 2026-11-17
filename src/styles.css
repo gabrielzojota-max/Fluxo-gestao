@@ -2295,3 +2295,113 @@ section:has(.client-profile) .profile-main>label{color:#c3e995}
   .appointment-modal-status>div strong{font-size:19px}
   .appointment-form>.list-head{align-items:flex-start}
 }
+
+
+/* FLUXO · revisão mobile de cadastro, agenda e navegação */
+@media(max-width:700px){
+  html,body,#root,.shell,main{max-width:100%;overflow-x:clip}
+  main{min-width:0}
+  header{gap:8px}
+  header>small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  header .user-chip{max-width:66px}
+  section{min-width:0;padding-bottom:calc(112px + env(safe-area-inset-bottom))}
+  section>footer{padding:20px 2px calc(8px + env(safe-area-inset-bottom));text-align:center;line-height:1.5}
+
+  /* Formulários: uma coluna e controles confortáveis ao toque */
+  .module-grid{grid-template-columns:minmax(0,1fr);gap:12px}
+  .form-card,.list-card,.profile-panel{min-width:0}
+  .data-form{grid-template-columns:minmax(0,1fr);gap:9px}
+  .data-form>*{min-width:0;max-width:100%}
+  .data-form>label{margin-top:3px}
+  .data-form input,.data-form select,.data-form textarea,
+  .search-field input,.stock-tools>input,
+  .payment-form input,.payment-form select,
+  .cash-closing-controls input{font-size:16px;max-width:100%}
+  .data-form button,.form-card>.primary,.schedule-submit{width:100%;min-height:48px}
+  .vehicle-fields{grid-template-columns:minmax(0,1fr);gap:9px}
+  .photo-preview{max-width:100%;min-width:0}
+  .photo-preview img{max-width:100%;height:auto;object-fit:contain}
+  .list-head{align-items:stretch;flex-direction:column}
+  .list-head>div{min-width:0;width:100%}
+  .search-field{width:100%;max-width:none;min-height:44px}
+  .list-head>.secondary-action,.list-head>button{width:100%;min-height:43px}
+  .data-row{min-width:0}
+  .data-row>div:first-child{flex:1;min-width:0}
+  .data-row b,.data-row small{overflow-wrap:anywhere}
+  .client-open{flex:none;font-size:10px}
+
+  /* Agenda e criação de atendimento */
+  .appointment-tools{grid-template-columns:minmax(0,1fr);align-items:stretch}
+  .appointment-tools>div{min-width:0}
+  .appointment-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+  .appointment-filters button{min-width:0;min-height:43px;padding:8px 6px;white-space:normal;line-height:1.25}
+  .appointment-form{min-width:0;padding:13px}
+  .appointment-form>.list-head{display:flex;align-items:center;flex-direction:row;gap:8px}
+  .appointment-form>.list-head>div{min-width:0}
+  .appointment-form>.list-head .cancel-action{flex:none;min-height:42px}
+  .appointment-form .grid-form{grid-template-columns:minmax(0,1fr)}
+  .appointment-form .grid-form>.wide{grid-column:1}
+  .appointment-form .schedule-field{min-width:0;padding:12px}
+  .appointment-form .appointment-service-line{grid-template-columns:minmax(0,1fr);min-width:0}
+  .appointment-service-line .service-line-main{grid-template-columns:minmax(0,1fr)}
+  .appointment-service-line .service-line-main>*,
+  .appointment-service-line .service-line-price>*{min-width:0;width:100%}
+  .appointment-service-line .service-line-price{grid-template-columns:minmax(0,1fr);gap:6px}
+  .appointment-service-line .cancel-action{width:100%;min-height:40px}
+  .add-service-line{width:100%;min-height:44px;justify-content:center}
+  .appointment-create-bottom{position:sticky;bottom:calc(86px + env(safe-area-inset-bottom));z-index:4;width:100%;min-height:50px;box-shadow:0 10px 28px #0008}
+  .appointment-row .row-actions{min-width:0}
+  .appointment-row .row-actions button{flex:none;min-width:43px;min-height:43px}
+
+  /* Ficha de cliente e histórico */
+  .profile-top{align-items:flex-start;flex-direction:column;gap:10px}
+  .profile-header-actions{width:100%;justify-content:space-between;gap:8px}
+  .profile-header-actions .danger-action{min-height:42px}
+  .profile-hero{min-width:0}
+  .profile-main{overflow-wrap:anywhere}
+  .profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .profile-columns{grid-template-columns:minmax(0,1fr)}
+  .vehicle-profile{align-items:flex-start;flex-wrap:wrap}
+  .vehicle-profile .vehicle-open{min-width:0}
+  .vehicle-profile .photo-upload{width:100%;justify-content:center;min-height:42px}
+  .history-row{align-items:flex-start}
+  .history-row>div:first-child{min-width:0}
+  .history-value{max-width:42%;white-space:normal;text-align:right}
+  .history-value .status{white-space:normal;text-align:center}
+
+  /* Fichas em modal: rolagem independente e sem padding herdado de section */
+  .modal-backdrop{align-items:center;overflow-y:auto;padding:10px}
+  .detail-modal{width:100%;max-width:560px;max-height:calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;padding:14px}
+  .detail-modal section{max-width:none;margin:0;padding:0}
+  .detail-modal .modal-heading{top:-14px}
+  .detail-modal .detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .detail-modal .detail-grid>div{min-width:0}
+  .detail-modal .modal-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  .detail-modal .modal-actions>*{width:100%;min-height:45px}
+  .detail-modal .data-form{grid-template-columns:minmax(0,1fr)}
+  .detail-modal .appointment-service-breakdown{padding:12px}
+  .detail-modal .service-breakdown-row,.detail-modal .service-breakdown-total{align-items:flex-start}
+  .detail-modal .service-breakdown-row span{min-width:0;overflow-wrap:anywhere}
+
+  /* Barra inferior respeita a área segura do iPhone */
+  .mobile-nav{
+    min-height:70px;
+    padding:7px 6px calc(8px + env(safe-area-inset-bottom));
+    padding-bottom:max(8px,env(safe-area-inset-bottom));
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+  }
+  .mobile-nav button{min-width:0;min-height:48px;padding:5px 2px;justify-content:center}
+  .mobile-nav button span{font-size:9px;white-space:nowrap}
+}
+@media(max-width:380px){
+  header{gap:6px}
+  header>small{font-size:7px;letter-spacing:.7px}
+  header .user-chip{display:none}
+  section{padding-left:9px;padding-right:9px}
+  .appointment-filters{grid-template-columns:minmax(0,1fr)}
+  .profile-stats{gap:7px}
+  .profile-stats article{padding:11px}
+  .detail-modal .detail-grid{grid-template-columns:minmax(0,1fr)}
+  .profile-header-actions{align-items:stretch;flex-direction:column}
+}
