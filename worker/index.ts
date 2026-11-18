@@ -285,7 +285,7 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
  }
   if(r.method==="GET"&&u.pathname==="/api/veiculos"){
   const clienteId=(u.searchParams.get("cliente_id")??"").trim();
-  const rows=await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,v.foto_data,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id WHERE (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId,clienteId).all<any>();
+  const rows=await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,v.foto_data,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id AND c.ativo=1 WHERE (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId,clienteId).all<any>();
   return json({veiculos:rows.results??[]},200,h)
  }
  if(r.method==="PATCH"&&/^\/api\/veiculos\/[^/]+$/.test(u.pathname)){
