@@ -130,6 +130,29 @@ export default { async fetch(r, e) {
                 return json({ error: "Não foi possível criar o acesso do sócio." }, 500, h);
             }
         }
+        if (r.method === "GET" && u.pathname === "/api/configuracoes") {
+            const row = await e.DB.prepare("SELECT nome_fantasia,razao_social,telefone,whatsapp,endereco,numero,complemento,bairro,cidade,cep,instagram,facebook,tiktok,logo_url FROM configuracoes_empresa WHERE id='principal'").first();
+            return json({ configuracoes: row ?? { nome_fantasia: "", razao_social: "", telefone: "", whatsapp: "", endereco: "", numero: "", complemento: "", bairro: "", cidade: "", cep: "", instagram: "", facebook: "", tiktok: "", logo_url: "" } }, 200, h);
+        }
+        if (r.method === "PUT" && u.pathname === "/api/configuracoes") {
+            if (current?.papel !== "socio")
+                return json({ error: "Apenas sócios podem alterar os dados da empresa." }, 403, h);
+            try {
+                const b = await body(r), fields = ["nome_fantasia", "razao_social", "telefone", "whatsapp", "endereco", "numero", "complemento", "bairro", "cidade", "cep", "instagram", "facebook", "tiktok", "logo_url"], limits = [120, 160, 40, 40, 180, 20, 100, 100, 100, 12, 180, 180, 180, 500];
+                const values = fields.map((key, i) => String(b[key] ?? "").trim());
+                if (values.some((value, i) => value.length > limits[i]))
+                    return json({ error: "Um ou mais campos ultrapassaram o limite permitido." }, 400, h);
+                if (values[13] && !/^https:\/\//i.test(values[13]))
+                    return json({ error: "O logotipo precisa usar um link HTTPS público." }, 400, h);
+                await e.DB.prepare("INSERT INTO configuracoes_empresa(id,nome_fantasia,razao_social,telefone,whatsapp,endereco,numero,complemento,bairro,cidade,cep,instagram,facebook,tiktok,logo_url,atualizado_por,atualizado_em) VALUES('principal',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','-3 hours')) ON CONFLICT(id) DO UPDATE SET nome_fantasia=excluded.nome_fantasia,razao_social=excluded.razao_social,telefone=excluded.telefone,whatsapp=excluded.whatsapp,endereco=excluded.endereco,numero=excluded.numero,complemento=excluded.complemento,bairro=excluded.bairro,cidade=excluded.cidade,cep=excluded.cep,instagram=excluded.instagram,facebook=excluded.facebook,tiktok=excluded.tiktok,logo_url=excluded.logo_url,atualizado_por=excluded.atualizado_por,atualizado_em=excluded.atualizado_em").bind(...values, current.id).run();
+                await audit(e, current.id, "configuracoes_empresa_atualizadas", "configuracoes_empresa");
+                return json({ configuracoes: Object.fromEntries(fields.map((key, i) => [key, values[i]])) }, 200, h);
+            }
+            catch (error) {
+                console.error("company_settings_error", { message: error instanceof Error ? error.message : "unknown" });
+                return json({ error: "Não foi possível salvar os dados da empresa." }, 500, h);
+            }
+        }
         if (r.method === "GET" && u.pathname === "/api/dashboard") {
             const [clients, appointments, today, revenue, monthExpenses, weekRevenue, weekExpenses, prevWeekRevenue, prevWeekExpenses, openAppointments, services] = await Promise.all([
                 e.DB.prepare("SELECT COUNT(*) total FROM clientes").first(),
@@ -464,20 +487,15 @@ export default { async fetch(r, e) {
             const rows = await e.DB.prepare("SELECT v.id,v.cliente_id,v.marca,v.modelo,v.ano,v.placa,v.cor,v.observacoes,v.foto_data,c.nome cliente FROM veiculos v JOIN clientes c ON c.id=v.cliente_id AND c.ativo=1 WHERE (?='' OR v.cliente_id=?) ORDER BY c.nome,v.modelo").bind(clienteId, clienteId).all();
             return json({ veiculos: rows.results ?? [] }, 200, h);
         }
-        if (r.method === "PATCH" && /^\\/api)
-            ;
-        /veiculos\\/[ ^ /]+$/.test(u.pathname)];
-        {
+        if (r.method === "PATCH" && /^\/api\/veiculos\/[^/]+$/.test(u.pathname)) {
             try {
                 const id = u.pathname.split("/").pop() ?? "", b = await body(r), existing = await e.DB.prepare("SELECT id FROM veiculos WHERE id=?").bind(id).first();
                 if (!existing)
                     return json({ error: "Veículo não encontrado." }, 404, h);
                 if (b.foto_data !== undefined) {
                     const fotoData = String(b.foto_data ?? "");
-                    if (!fotoData || fotoData.length > 480000 || !/^data:image\\/(jpeg | png | webp))
-                        ;
-                    base64, [A - Za - z0 - 9 + /=]+$/.test(fotoData)];
-                    return json({ error: "Envie uma foto JPG, PNG ou WebP com tamanho reduzido." }, 400, h);
+                    if (!fotoData || fotoData.length > 480000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(fotoData))
+                        return json({ error: "Envie uma foto JPG, PNG ou WebP com tamanho reduzido." }, 400, h);
                     await e.DB.prepare("UPDATE veiculos SET foto_data=? WHERE id=?").bind(fotoData, id).run();
                     await audit(e, current.id, "foto_veiculo_atualizada", "veiculos");
                     return json({ status: "updated" }, 200, h);
@@ -494,10 +512,7 @@ export default { async fetch(r, e) {
                 return json({ error: "Não foi possível atualizar o veículo." }, 500, h);
             }
         }
-        if (r.method === "POST" && /^\\/api)
-            ;
-        /veiculos\\/[ ^ /]+\\/excluir$ / .test(u.pathname)];
-        {
+        if (r.method === "POST" && /^\/api\/veiculos\/[^/]+\/excluir$/.test(u.pathname)) {
             try {
                 const id = u.pathname.split("/")[3] ?? "", vehicle = await e.DB.prepare("SELECT id FROM veiculos WHERE id=?").bind(id).first();
                 if (!vehicle)
