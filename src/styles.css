@@ -2658,3 +2658,53 @@ td,th{border-color:rgba(177,220,145,.1)}
   .mobile-nav button span{font-size:10px;font-weight:700;letter-spacing:.1px}
   section{padding-bottom:calc(104px + env(safe-area-inset-bottom))!important}
 }
+
+/* FLUXO · painel e agenda mobile-first */
+@media(max-width:700px){
+ .dashboard-page,.appointments-page{display:grid;gap:13px}
+ .welcome-panel{position:relative;overflow:hidden;gap:12px;min-height:0;padding:18px 15px;border-radius:15px;background:radial-gradient(ellipse at 100% 0%,rgba(181,232,121,.13),transparent 48%),linear-gradient(145deg,#1a2b1d,#111a14)}
+ .welcome-panel h2{font-size:22px;line-height:1.2;letter-spacing:-.6px}
+ .welcome-panel p{max-width:29ch;font-size:11px;line-height:1.5}
+ .welcome-meta{width:100%;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:3px 9px;padding-top:10px;border-top:1px solid rgba(181,232,121,.14)}
+ .welcome-meta small{grid-row:1 / span 2;font-size:9px;letter-spacing:1px;color:#a9d77b}
+ .welcome-meta strong{font-size:11px;text-transform:capitalize}
+ .welcome-meta span{font-size:8px;letter-spacing:1px;color:#8fa18f}
+ .dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .dashboard-stats .metric-card{min-width:0;min-height:106px;padding:11px;border-radius:12px}
+ .dashboard-stats .metric-top span{font-size:9px;line-height:1.35}
+ .dashboard-stats .metric-card>strong{display:block;margin:11px 0 5px;font-size:clamp(16px,5vw,20px);overflow-wrap:anywhere}
+ .dashboard-stats .metric-card>small{font-size:9px;line-height:1.35}
+ .dashboard-week-grid{grid-template-columns:1fr;gap:7px}
+ .dashboard-week-grid>div{grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 9px;padding:11px}
+ .dashboard-week-grid>div strong{grid-column:2;grid-row:1 / span 2;text-align:right;font-size:18px}
+ .dashboard-panels{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ .dashboard-panels>article,.today-list{padding:13px 11px}
+ .dashboard-panels .list-head,.today-list .list-head{flex-direction:row;align-items:center;gap:8px}
+ .dashboard-panels .list-head h2,.today-list .list-head h2{font-size:13px}
+ .dashboard-panels .list-head p,.today-list .list-head p{font-size:9px;line-height:1.4}
+ .dashboard-panels .list-head button{flex:none;min-height:39px;padding:8px 9px;font-size:10px}
+ .today-list .rows,.appointment-list .rows{display:grid;gap:7px}
+ .today-list .appointment-row,.appointment-list .appointment-row{display:grid;grid-template-columns:48px minmax(0,1fr);gap:8px;padding:11px 9px;border:1px solid rgba(177,220,145,.12);border-radius:11px;background:rgba(8,14,10,.38)}
+ .appointment-row .appointment-time{align-self:start;min-width:0;padding:7px 4px;border-radius:8px;background:#1b2b1e;text-align:center}
+ .appointment-row .appointment-time strong{font-size:16px}
+ .appointment-row .appointment-time small{font-size:7px;letter-spacing:.7px}
+ .appointment-row .appointment-open{min-width:0;gap:4px;padding:1px 0;text-align:left}
+ .appointment-row .appointment-open b{font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+ .appointment-row .appointment-open small{font-size:9px;line-height:1.4;overflow-wrap:anywhere}
+ .appointment-row .row-actions{grid-column:2;display:flex;align-items:center;justify-content:flex-start;gap:7px;flex-wrap:wrap}
+ .appointment-row .row-actions .status{font-size:9px;padding:5px 8px}
+ .appointment-row .row-actions button{min-width:38px;min-height:38px}
+ .appointment-tools{display:grid;gap:9px;padding:2px 0}
+ .appointment-tools h2{font-size:15px}
+ .appointment-tools p{font-size:10px;line-height:1.45}
+ .appointment-tools .appointment-filters{display:flex;gap:7px;width:100%;overflow-x:auto;padding:2px 1px 7px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+ .appointment-tools .appointment-filters button{flex:0 0 auto;min-height:39px;padding:8px 12px;white-space:nowrap;border-radius:22px;scroll-snap-align:start;font-size:10px}
+ .appointment-list{padding:10px}
+ .appointment-create-bottom{position:sticky;bottom:calc(82px + env(safe-area-inset-bottom));min-height:50px}
+}
+@media(max-width:380px){
+ .dashboard-stats .metric-card{padding:10px 9px}
+ .dashboard-stats .metric-top span{font-size:8px}
+ .dashboard-panels .list-head button{font-size:9px;padding:7px}
+ .appointment-tools .appointment-filters button{font-size:9px;padding:8px 10px}
+}
