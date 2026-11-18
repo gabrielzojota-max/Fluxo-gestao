@@ -3080,3 +3080,35 @@ td,th{border-color:rgba(177,220,145,.1)}
  .modal-actions button{width:100%}
  .appointment-create-bottom{bottom:calc(72px + env(safe-area-inset-bottom))}
 }
+
+
+/* FLUXO · Catálogo de serviços no celular */
+@media(max-width:700px){
+ .module-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
+ .module-grid>.form-card,.module-grid>.list-card{min-width:0;width:100%;padding:13px 11px;border-radius:13px}
+ .module-grid>.form-card>h2{display:flex;align-items:center;gap:8px;font-size:14px;line-height:1.35;margin-bottom:12px}
+ .module-grid .data-form{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+ .module-grid .data-form label{font-size:9px;line-height:1.4;margin-top:3px}
+ .module-grid .data-form input,.module-grid .data-form select,.module-grid .data-form textarea{width:100%;min-width:0;min-height:44px;padding:10px;font-size:16px;border-radius:9px}
+ .module-grid .data-form textarea{min-height:92px;resize:vertical}
+ .module-grid .data-form button{width:100%;min-height:47px;margin-top:4px;font-size:10px}
+ .module-grid .data-form button.secondary{min-height:41px}
+ .module-grid .list-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+ .module-grid .list-head>div{min-width:0}
+ .module-grid .list-head h2{font-size:13px;line-height:1.35}
+ .module-grid .list-head p{font-size:8px;line-height:1.45;margin-top:4px}
+ .module-grid .rows{display:grid;gap:7px}
+ .module-grid .service-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:8px;padding:11px 8px;border:1px solid rgba(177,220,145,.12);border-radius:10px;background:rgba(7,13,9,.35)}
+ .module-grid .service-row>div:first-child{min-width:0;display:grid;gap:5px}
+ .module-grid .service-row>div:first-child b{font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+ .module-grid .service-row>div:first-child small{font-size:8px;line-height:1.5;color:#aab9aa;overflow-wrap:anywhere}
+ .module-grid .service-row>strong{margin:0;align-self:start;font-size:11px;white-space:nowrap;color:#c1ee78}
+ .module-grid .service-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%}
+ .module-grid .service-actions button{width:100%;min-height:40px;padding:8px;font-size:9px}
+ .module-grid .empty{padding:22px 12px}
+}
+@media(max-width:380px){
+ .module-grid>.form-card,.module-grid>.list-card{padding:11px 9px}
+ .module-grid .service-row{gap:7px;padding:9px 7px}
+ .module-grid .service-row>strong{font-size:10px}
+}
