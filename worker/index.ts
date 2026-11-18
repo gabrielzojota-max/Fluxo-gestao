@@ -81,19 +81,19 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
   }
   if(r.method==="GET"&&u.pathname==="/api/clientes"){
   const q=(u.searchParams.get("q")??"").trim();
-  const rows=await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos FROM clientes c WHERE (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q,q,q).all<any>();
+  const rows=await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.endereco,c.complemento,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos FROM clientes c WHERE (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q,q,q).all<any>();
   return json({clientes:rows.results??[]},200,h)
  }
  if(r.method==="POST"&&u.pathname==="/api/clientes"){
-  try{const b=await body(r),nome=String(b.nome??"").trim(),telefone=String(b.telefone??"").trim(),email=String(b.email??"").trim(),observacoes=String(b.observacoes??"").trim();
-   if(nome.length<2||nome.length>120||telefone.length<8||telefone.length>30||email.length>160||observacoes.length>1000)return json({error:"Informe o nome e um celular válido para cadastrar o cliente."},400,h);
-   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO clientes(id,nome,telefone,email,observacoes) VALUES(?,?,?,?,?)").bind(id,nome,telefone||null,email||null,observacoes||null).run();
-   await audit(e,(current as any).id,"cliente_criado","clientes");return json({id,nome,telefone,email,observacoes},201,h)
+  try{const b=await body(r),nome=String(b.nome??"").trim(),telefone=String(b.telefone??"").trim(),email=String(b.email??"").trim(),endereco=String(b.endereco??"").trim(),complemento=String(b.complemento??"").trim(),observacoes=String(b.observacoes??"").trim();
+   if(nome.length<2||nome.length>120||telefone.length<8||telefone.length>30||email.length>160||endereco.length>240||complemento.length>120||observacoes.length>1000)return json({error:"Confira os dados do cliente. Endereço deve ter até 240 caracteres e complemento até 120."},400,h);
+   const id=crypto.randomUUID();await e.DB.prepare("INSERT INTO clientes(id,nome,telefone,email,endereco,complemento,observacoes) VALUES(?,?,?,?,?,?,?)").bind(id,nome,telefone||null,email||null,endereco||null,complemento||null,observacoes||null).run();
+   await audit(e,(current as any).id,"cliente_criado","clientes");return json({id,nome,telefone,email,endereco,complemento,observacoes},201,h)
   }catch(error){console.error("cliente_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível cadastrar o cliente."},500,h)}
  }
  if(r.method==="GET"&&/^\/api\/clientes\/[^/]+$/.test(u.pathname)){
   const id=u.pathname.split("/").pop()??"";
-  const client=await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos,(SELECT MAX(a.data_hora) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') ultima_visita FROM clientes c WHERE c.id=?").bind(id).first<any>();
+  const client=await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.endereco,c.complemento,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos,(SELECT MAX(a.data_hora) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') ultima_visita FROM clientes c WHERE c.id=?").bind(id).first<any>();
   if(!client)return json({error:"Cliente não encontrado."},404,h);
   const [vehicles,history]=await Promise.all([
    e.DB.prepare("SELECT id,marca,modelo,ano,placa,cor,observacoes,foto_data FROM veiculos WHERE cliente_id=? ORDER BY criado_em DESC").bind(id).all<any>(),
