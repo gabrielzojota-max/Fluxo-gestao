@@ -321,6 +321,25 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
    await e.DB.batch(statements);await audit(e,(current as any).id,"atendimento_criado","atendimentos");return json({id,servicos:items.length,valor_centavos:total},201,h)
   }catch(error){console.error("atendimento_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível criar o atendimento."},500,h)}
  }
+ if(r.method==="POST"&&/^\\/api\\/atendimentos\\/[^/]+\\/excluir$/.test(u.pathname)){
+  try{const id=u.pathname.split("/")[3]??"",appointment=await e.DB.prepare("SELECT id,status FROM atendimentos WHERE id=?").bind(id).first<any>();if(!appointment)return json({error:"Atendimento não encontrado."},404,h);
+   if(appointment.status==="em_andamento")return json({error:"Finalize ou cancele o atendimento antes de excluí-lo."},409,h);
+   const [payments,stock,files]=await Promise.all([
+    e.DB.prepare("SELECT COUNT(*) total FROM pagamentos WHERE atendimento_id=? AND status<>'pendente'").bind(id).first<any>(),
+    e.DB.prepare("SELECT COUNT(*) total FROM movimentacoes_estoque WHERE atendimento_id=?").bind(id).first<any>(),
+    e.DB.prepare("SELECT COUNT(*) total FROM arquivos WHERE atendimento_id=?").bind(id).first<any>()
+   ]);
+   if(Number(payments?.total??0)>0)return json({error:"Não é possível excluir: este atendimento possui pagamento recebido ou estornado. Preserve o histórico financeiro."},409,h);
+   if(Number(stock?.total??0)>0)return json({error:"Não é possível excluir: existem movimentações de estoque vinculadas a este atendimento."},409,h);
+   if(Number(files?.total??0)>0)return json({error:"Não é possível excluir: existem arquivos vinculados a este atendimento."},409,h);
+   await e.DB.batch([
+    e.DB.prepare("DELETE FROM pagamentos WHERE atendimento_id=? AND status='pendente'").bind(id),
+    e.DB.prepare("DELETE FROM atendimento_servicos WHERE atendimento_id=?").bind(id),
+    e.DB.prepare("DELETE FROM atendimentos WHERE id=?").bind(id)
+   ]);
+   await audit(e,(current as any).id,"atendimento_excluido","atendimentos");return json({deleted:true,id},200,h)
+  }catch(error){console.error("atendimento_delete_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível excluir o atendimento."},500,h)}
+ }
  if(r.method==="PATCH"&&u.pathname.startsWith("/api/atendimentos/")){
   try{const id=u.pathname.split("/").pop()??"",b=await body(r),status=String(b.status??"");if(!["agendado","em_andamento","concluido","cancelado"].includes(status))return json({error:"Status inválido."},400,h);
    const result=await e.DB.prepare("UPDATE atendimentos SET status=? WHERE id=?").bind(status,id).run();if(!result.meta.changes)return json({error:"Atendimento não encontrado."},404,h);
