@@ -3172,3 +3172,29 @@ td,th{border-color:rgba(177,220,145,.1)}
     white-space:normal;
   }
 }
+
+
+/* FLUXO · Enquadramento do botão Abrir agenda no painel mobile */
+@media(max-width:700px){
+  .dashboard-panels .list-head{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    min-width:0;
+    width:100%;
+  }
+  .dashboard-panels .list-head>div{
+    min-width:0;
+    width:100%;
+  }
+  .dashboard-panels .list-head>.secondary-action{
+    box-sizing:border-box;
+    display:flex;
+    flex:0 1 auto;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    white-space:normal;
+    justify-content:center;
+  }
+}
