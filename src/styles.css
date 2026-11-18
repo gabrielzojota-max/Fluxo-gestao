@@ -3112,3 +3112,18 @@ td,th{border-color:rgba(177,220,145,.1)}
  .module-grid .service-row{gap:7px;padding:9px 7px}
  .module-grid .service-row>strong{font-size:10px}
 }
+
+/* Correção definitiva do enquadramento mobile de Clientes e Serviços */
+@media(max-width:700px){
+  main{width:100%;min-width:0;margin-left:0}
+  main>section{width:100%;max-width:100%;min-width:0}
+  section:has(.module-grid){width:100%;max-width:100%;min-width:0}
+  section:has(.module-grid) .module-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:stretch!important;width:100%!important;max-width:100%!important;min-width:0!important}
+  section:has(.module-grid) .module-grid>.form-card,section:has(.module-grid) .module-grid>.list-card,section:has(.module-grid) .module-grid>.vehicle-card{display:block;width:100%!important;max-width:100%!important;min-width:0!important;justify-self:stretch!important}
+  section:has(.module-grid) .module-grid .data-form>*,section:has(.module-grid) .module-grid input,section:has(.module-grid) .module-grid textarea,section:has(.module-grid) .module-grid select,section:has(.module-grid) .module-grid button{box-sizing:border-box;max-width:100%;min-width:0}
+  section:has(.module-grid) .module-grid .data-form input,section:has(.module-grid) .module-grid .data-form textarea,section:has(.module-grid) .module-grid .data-form select{width:100%!important}
+}
+@media(max-width:380px){
+  section:has(.module-grid){padding-left:10px;padding-right:10px}
+  section:has(.module-grid) .module-grid>.form-card,section:has(.module-grid) .module-grid>.list-card,section:has(.module-grid) .module-grid>.vehicle-card{padding:12px 10px}
+}
