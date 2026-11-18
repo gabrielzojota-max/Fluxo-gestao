@@ -2793,3 +2793,97 @@ td,th{border-color:rgba(177,220,145,.1)}
  .profile-stats article{padding:9px}
  .profile-stats article strong{font-size:12px}
 }
+
+
+/* FLUXO · financeiro mobile-first */
+@media(max-width:700px){
+ .finance-page{display:grid;gap:12px;min-width:0}
+ .finance-toolbar{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:start}
+ .finance-toolbar h2{font-size:20px;line-height:1.2;margin:5px 0}
+ .finance-toolbar p{font-size:10px;line-height:1.5;max-width:34ch}
+ .finance-refresh{justify-self:start;min-height:40px;padding:8px 11px;font-size:10px}
+ .finance-page>.list-card,.finance-page>.reserve-panel,.finance-page>.cash-closing-panel{min-width:0;padding:13px 11px;border-radius:13px}
+ .reserve-heading{display:grid;grid-template-columns:minmax(0,1fr);gap:11px}
+ .reserve-heading h2{font-size:14px;line-height:1.35;display:flex;align-items:center;gap:7px}
+ .reserve-heading p{font-size:9px;line-height:1.5}
+ .reserve-balance{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:1px solid rgba(181,232,121,.17);border-radius:10px;background:rgba(181,232,121,.06)}
+ .reserve-balance small{font-size:9px}
+ .reserve-balance strong{font-size:19px;overflow-wrap:anywhere}
+ .reserve-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+ .reserve-form>div{min-width:0}
+ .reserve-form .reserve-description{grid-column:1/-1}
+ .reserve-form label,.cash-closing-controls label,.cash-count-field label,.cash-notes label{display:block;margin:0 0 5px;font-size:9px;line-height:1.4}
+ .reserve-form input,.reserve-form select,.cash-closing-controls input,.cash-count-field input,.cash-notes textarea{width:100%;min-width:0;min-height:43px;padding:10px;border-radius:9px;font-size:13px}
+ .reserve-form>.primary{grid-column:1/-1;width:100%;min-height:47px}
+ .reserve-footnote{font-size:9px;line-height:1.5;margin-top:9px}
+ .reserve-history{margin-top:13px;padding-top:11px;border-top:1px solid rgba(177,220,145,.12)}
+ .reserve-history-title{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+ .reserve-history-title b{font-size:11px}
+ .reserve-history-title small{font-size:8px}
+ .reserve-history .rows{display:grid;gap:6px;margin-top:8px}
+ .reserve-row{display:grid;grid-template-columns:31px minmax(0,1fr) auto;align-items:center;gap:8px;padding:9px 7px;border:1px solid rgba(177,220,145,.1);border-radius:9px;background:rgba(7,13,9,.35)}
+ .reserve-row>div{min-width:0;display:grid;gap:4px}
+ .reserve-row b{font-size:9px}
+ .reserve-row small{font-size:8px;line-height:1.4;overflow-wrap:anywhere}
+ .reserve-row>strong{font-size:10px;white-space:nowrap}
+ .reserve-movement-icon{width:29px;height:29px;display:grid;place-items:center;border-radius:8px}
+ .reserve-empty{font-size:9px;line-height:1.5;padding:10px 0}
+ .cash-closing-panel .list-head{display:block}
+ .cash-closing-panel .list-head h2{font-size:13px;line-height:1.35}
+ .cash-closing-panel .list-head p{font-size:9px;line-height:1.5}
+ .cash-closing-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px;margin:10px 0}
+ .cash-closing-controls>div{min-width:0}
+ .cash-closing-controls input{min-height:42px}
+ .cash-closing-controls .secondary-action{min-height:42px;padding:8px 9px;font-size:9px;white-space:nowrap}
+ .cash-closing-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .cash-closing-metrics>div{min-width:0;padding:10px 9px;border:1px solid rgba(177,220,145,.12);border-radius:10px;background:rgba(7,13,9,.38)}
+ .cash-closing-metrics>div:last-child{grid-column:1/-1}
+ .cash-closing-metrics small{display:block;font-size:8px;line-height:1.35}
+ .cash-closing-metrics strong{display:block;margin-top:6px;font-size:15px;overflow-wrap:anywhere}
+ .cash-methods{display:grid;gap:7px;margin-top:11px}
+ .cash-methods>b{font-size:10px}
+ .cash-methods>span{display:flex;justify-content:space-between;gap:8px;padding:8px;border-radius:8px;background:rgba(7,13,9,.35);font-size:9px}
+ .cash-methods>span strong{font-size:9px;white-space:nowrap}
+ .cash-count-field,.cash-notes{display:grid;gap:5px;margin-top:11px}
+ .cash-count-field>small{font-size:8px}
+ .cash-count-field>strong{font-size:10px;line-height:1.4}
+ .cash-notes textarea{min-height:68px;resize:vertical}
+ .cash-close-button{width:100%;min-height:48px;margin-top:11px}
+ .cash-closed-state{display:flex;align-items:flex-start;gap:9px;padding:11px;border:1px solid rgba(181,232,121,.18);border-radius:10px;background:rgba(181,232,121,.06)}
+ .cash-closed-state>div{min-width:0;display:grid;gap:5px}
+ .cash-closed-state b{font-size:10px}
+ .cash-closed-state small{font-size:8px;line-height:1.45;overflow-wrap:anywhere}
+ .finance-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .finance-summary>article{min-width:0;padding:11px 10px;border:1px solid rgba(177,220,145,.13);border-radius:11px;background:linear-gradient(145deg,rgba(21,31,24,.97),rgba(15,23,18,.98))}
+ .finance-summary>article>div{display:flex;align-items:center;justify-content:space-between;gap:5px}
+ .finance-summary>article>div small{font-size:8px;line-height:1.35}
+ .finance-summary>article>div svg{width:15px;height:15px;flex:none;color:#b5e879}
+ .finance-summary>article>strong{display:block;margin:10px 0 5px;font-size:clamp(14px,4.2vw,18px);line-height:1.25;overflow-wrap:anywhere}
+ .finance-summary>article>span{display:block;font-size:8px;line-height:1.4;color:#96a397}
+ .payment-fees-panel .list-head h2,.finance-open .list-head h2{font-size:13px;line-height:1.4}
+ .payment-fees-panel .list-head p,.finance-open .list-head p{font-size:9px;line-height:1.5}
+ .payment-fees-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .payment-fees-form>div{min-width:0}
+ .payment-fees-form label{font-size:9px}
+ .payment-fees-form input{width:100%;min-width:0;min-height:43px;padding:9px;font-size:13px}
+ .payment-fees-form>.primary{grid-column:1/-1;width:100%;min-height:45px}
+ .payment-fees-note{font-size:8px;line-height:1.5;margin-top:9px}
+ .finance-open .rows{display:grid;gap:8px}
+ .finance-due{min-width:0;padding:10px;border:1px solid rgba(177,220,145,.12);border-radius:10px;background:rgba(7,13,9,.35)}
+ .finance-due .due-info{min-width:0}
+ .finance-due .due-info>b{font-size:11px;overflow-wrap:anywhere}
+ .finance-due .due-info>small{font-size:8px;line-height:1.4}
+ .finance-reconcile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
+ .finance-reconcile-grid>span{display:grid;gap:3px;padding:8px;border-radius:8px;background:rgba(181,232,121,.045);font-size:8px;line-height:1.35}
+ .finance-reconcile-grid>span strong{font-size:10px;overflow-wrap:anywhere}
+}
+@media(max-width:380px){
+ .finance-summary{gap:6px}
+ .finance-summary>article{padding:9px 8px}
+ .finance-summary>article>strong{font-size:14px}
+ .reserve-row{grid-template-columns:28px minmax(0,1fr) auto;gap:6px;padding:8px 5px}
+ .reserve-row>strong{font-size:9px}
+ .cash-closing-controls{grid-template-columns:minmax(0,1fr)}
+ .cash-closing-controls .secondary-action{justify-self:start}
+ .cash-closing-metrics strong{font-size:13px}
+}
