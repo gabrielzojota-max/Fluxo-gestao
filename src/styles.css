@@ -2887,3 +2887,65 @@ td,th{border-color:rgba(177,220,145,.1)}
  .cash-closing-controls .secondary-action{justify-self:start}
  .cash-closing-metrics strong{font-size:13px}
 }
+
+
+/* FLUXO · relatórios claros e utilizáveis no celular */
+@media(max-width:700px){
+ .reports-page{display:grid;gap:12px;min-width:0}
+ .report-toolbar{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:start}
+ .report-toolbar h2{font-size:20px;line-height:1.2;margin:5px 0}
+ .report-toolbar p{font-size:10px;line-height:1.5;max-width:36ch}
+ .report-export{justify-self:start;width:auto;min-height:42px;padding:9px 13px;font-size:10px}
+ .report-period{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px;border:1px solid rgba(177,220,145,.13);border-radius:12px;background:rgba(15,23,18,.9)}
+ .report-presets{grid-column:1/-1;display:flex;gap:6px;overflow-x:auto;padding:1px 0 5px;scrollbar-width:none}
+ .report-presets::-webkit-scrollbar{display:none}
+ .report-presets button{flex:none;min-height:36px;padding:7px 11px;border:1px solid rgba(177,220,145,.18);border-radius:20px;background:rgba(7,13,9,.5);color:#dce8d9;font-size:9px;white-space:nowrap}
+ .report-period>label{min-width:0;display:grid;gap:5px;font-size:9px}
+ .report-period input{width:100%;min-width:0;min-height:41px;padding:8px;border-radius:8px;font-size:11px}
+ .report-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .report-cards>article{min-width:0;display:flex;flex-direction:column;gap:6px;padding:11px 9px;border:1px solid rgba(177,220,145,.13);border-radius:11px;background:linear-gradient(145deg,rgba(21,31,24,.97),rgba(15,23,18,.98))}
+ .report-cards>article small{font-size:8px;line-height:1.35;color:#aab9aa}
+ .report-cards>article strong{font-size:clamp(14px,4vw,18px);line-height:1.25;overflow-wrap:anywhere}
+ .report-cards>article span{font-size:8px;line-height:1.4;color:#91a093}
+ .report-cards>article.positive strong{color:#b5e879}
+ .report-cards>article.negative strong{color:#ff9a86}
+ .report-comparison{min-width:0;padding:12px 10px;border-radius:12px}
+ .report-comparison .list-head h2{font-size:12px;line-height:1.4}
+ .report-comparison .list-head p{font-size:8px}
+ .comparison-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .comparison-grid>div{min-width:0;display:grid;gap:5px;padding:9px;border:1px solid rgba(177,220,145,.11);border-radius:9px;background:rgba(7,13,9,.36)}
+ .comparison-grid small{font-size:8px}
+ .comparison-grid b{font-size:12px;overflow-wrap:anywhere}
+ .comparison-grid span{font-size:8px;line-height:1.4;overflow-wrap:anywhere}
+ .report-columns{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ .report-columns>.list-card{min-width:0;padding:12px 10px;border-radius:12px}
+ .report-columns .list-head h2{font-size:12px;line-height:1.4}
+ .report-columns .list-head p{font-size:8px;line-height:1.45}
+ .report-columns .rows{display:grid;gap:6px}
+ .report-service{display:flex;align-items:center;justify-content:space-between;gap:9px;min-width:0;padding:9px 7px;border:1px solid rgba(177,220,145,.1);border-radius:9px;background:rgba(7,13,9,.34)}
+ .report-service>div{min-width:0;display:grid;gap:4px}
+ .report-service b{font-size:9px;line-height:1.4;overflow-wrap:anywhere}
+ .report-service small{font-size:8px;line-height:1.35}
+ .report-service>strong{flex:none;font-size:10px;white-space:nowrap}
+ .report-bars{display:grid;gap:9px;min-width:0}
+ .report-bar-row{display:grid;grid-template-columns:34px minmax(0,1fr) minmax(58px,auto);align-items:center;gap:7px;min-width:0}
+ .report-bar-row>small:first-child{font-size:8px;color:#9eae9f}
+ .report-bar-row>small:last-child{font-size:8px;text-align:right;white-space:nowrap}
+ .bar-pair{display:grid;gap:3px;min-width:0}
+ .bar-pair>span{display:block;min-width:2px;height:7px;border-radius:5px}
+ .bar-income{background:#a9df6d}
+ .bar-expense{background:#d58b70}
+ .report-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:5px}
+ .report-legend span{display:flex;align-items:center;gap:5px;font-size:8px;color:#aab9aa}
+ .report-legend span:before{content:"";width:8px;height:8px;border-radius:3px;background:#a9df6d}
+ .report-legend span:last-child:before{background:#d58b70}
+ .report-footnote{font-size:8px;line-height:1.55;padding:10px;border:1px solid rgba(177,220,145,.1);border-radius:9px;color:#aab9aa}
+}
+@media(max-width:380px){
+ .report-cards{gap:6px}
+ .report-cards>article{padding:9px 7px}
+ .report-cards>article strong{font-size:14px}
+ .report-period{padding:8px;gap:6px}
+ .report-bar-row{grid-template-columns:30px minmax(0,1fr) 53px;gap:5px}
+ .comparison-grid>div{padding:8px 7px}
+}
