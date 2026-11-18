@@ -16,7 +16,7 @@ function allowedOrigin(o, e) { return !!o && ((!!e.APP_ORIGIN && o === e.APP_ORI
 function cors(r, e) { const h = new Headers({ "Vary": "Origin" }), o = r.headers.get("Origin"); if (allowedOrigin(o, e)) {
     h.set("Access-Control-Allow-Origin", o);
     h.set("Access-Control-Allow-Credentials", "true");
-    h.set("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
+    h.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,OPTIONS");
     h.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
 } return h; }
 async function audit(e, u, a, d) { await e.DB.prepare("INSERT INTO auditoria(id,usuario_id,acao,entidade) VALUES(?,?,?,?)").bind(crypto.randomUUID(), u, a, d).run(); }
