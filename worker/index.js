@@ -554,10 +554,7 @@ export default { async fetch(r, e) {
                 return json({ error: "Não foi possível criar o atendimento." }, 500, h);
             }
         }
-        if (r.method === "POST" && /^\\/api)
-            ;
-        /atendimentos\\/[ ^ /]+\\/excluir$ / .test(u.pathname)];
-        {
+        if (r.method === "POST" && /^\/api\/atendimentos\/[^/]+\/excluir$/.test(u.pathname)) {
             try {
                 const id = u.pathname.split("/")[3] ?? "", appointment = await e.DB.prepare("SELECT id,status FROM atendimentos WHERE id=?").bind(id).first();
                 if (!appointment)
