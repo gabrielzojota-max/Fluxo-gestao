@@ -3127,3 +3127,32 @@ td,th{border-color:rgba(177,220,145,.1)}
   section:has(.module-grid){padding-left:10px;padding-right:10px}
   section:has(.module-grid) .module-grid>.form-card,section:has(.module-grid) .module-grid>.list-card,section:has(.module-grid) .module-grid>.vehicle-card{padding:12px 10px}
 }
+/* FLUXO · Agenda operacional: leitura rápida e ações */
+.appointments-page{min-width:0}.appointment-tools{min-width:0}.appointment-filters{min-width:0}
+.appointment-filters button{transition:background .15s ease,border-color .15s ease,color .15s ease}
+.appointment-filters button.active{background:#243b25;border-color:#8acb57;color:#e6ffd3}
+.appointment-row{align-items:center;min-width:0}
+.appointment-time{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid #344b35;border-radius:10px;background:linear-gradient(145deg,#1c2b1d,#111a13);font-variant-numeric:tabular-nums}
+.appointment-time strong{font-size:17px;letter-spacing:-.5px;color:#d8f5c1}
+.appointment-time small{font-size:8px;letter-spacing:.8px;color:#91a58b}
+.appointment-open{min-width:0;overflow-wrap:anywhere}.appointment-open b{line-height:1.4}.appointment-open small{line-height:1.5}
+.appointment-row .row-actions{min-width:0}.appointment-row .status{white-space:normal;text-align:center}
+.appointment-list .rows,.today-list .rows{min-width:0}
+@media(max-width:700px){
+ .appointments-page{width:100%;max-width:100%;overflow-x:clip}
+ .appointments-page>.today-list,.appointments-page>.appointment-list,.appointments-page>.appointment-tools{width:100%;max-width:100%;box-sizing:border-box}
+ .appointment-row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px;padding:11px 0}
+ .appointment-time{width:58px;min-height:62px}.appointment-time strong{font-size:16px}
+ .appointment-open{padding:0;min-width:0}.appointment-open b{font-size:11px;display:block}
+ .appointment-open small{font-size:9px;display:block;overflow-wrap:anywhere}
+ .appointment-row .row-actions{grid-column:2;display:flex;align-items:center;justify-content:flex-start;gap:7px;padding:0;flex-wrap:wrap}
+ .appointment-row .row-actions .status{font-size:9px;padding:4px 7px}
+ .appointment-tools{gap:9px}.appointment-tools>div:first-child{min-width:0}
+ .appointment-tools h2{font-size:15px}.appointment-tools p{font-size:10px}
+ .appointment-filters{padding-bottom:5px}.appointment-filters button{min-height:39px;font-size:9px}
+}
+@media(max-width:380px){
+ .appointment-row{grid-template-columns:52px minmax(0,1fr);gap:7px}
+ .appointment-time{width:52px;min-height:58px}
+ .appointment-open b{font-size:10px}.appointment-open small{font-size:8px}
+}
