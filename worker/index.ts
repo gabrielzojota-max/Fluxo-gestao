@@ -289,7 +289,22 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
   return json({veiculos:rows.results??[]},200,h)
  }
  if(r.method==="PATCH"&&/^\/api\/veiculos\/[^/]+$/.test(u.pathname)){
-  try{const id=u.pathname.split("/").pop()??"",b=await body(r),fotoData=String(b.foto_data??"");if(!fotoData||fotoData.length>480000||!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(fotoData))return json({error:"Envie uma foto JPG, PNG ou WebP com tamanho reduzido."},400,h);const result=await e.DB.prepare("UPDATE veiculos SET foto_data=? WHERE id=?").bind(fotoData,id).run();if(!result.meta.changes)return json({error:"Veículo não encontrado."},404,h);await audit(e,(current as any).id,"foto_veiculo_atualizada","veiculos");return json({status:"updated"},200,h)}catch(error){console.error("vehicle_photo_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível salvar a foto do veículo."},500,h)}
+  if(r.method==="PATCH"&&/^\/api\/veiculos\/[^/]+$/.test(u.pathname)){
+   try{
+    const id=u.pathname.split("/").pop()??"",b=await body(r),existing=await e.DB.prepare("SELECT id FROM veiculos WHERE id=?").bind(id).first<any>();
+    if(!existing)return json({error:"Veículo não encontrado."},404,h);
+    if(b.foto_data!==undefined){const fotoData=String(b.foto_data??"");if(!fotoData||fotoData.length>480000||!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(fotoData))return json({error:"Envie uma foto JPG, PNG ou WebP com tamanho reduzido."},400,h);await e.DB.prepare("UPDATE veiculos SET foto_data=? WHERE id=?").bind(fotoData,id).run();await audit(e,(current as any).id,"foto_veiculo_atualizada","veiculos");return json({status:"updated"},200,h)}
+    const modelo=String(b.modelo??"").trim(),placa=String(b.placa??"").trim().toUpperCase(),cor=String(b.cor??"").trim(),ano=b.ano==null||b.ano===""?null:Number(b.ano);
+    if(modelo.length<2||modelo.length>100||placa.length>12||cor.length>40||(ano!==null&&(!Number.isInteger(ano)||ano<1950||ano>2100)))return json({error:"Confira modelo, placa, ano e cor do veículo."},400,h);
+    await e.DB.prepare("UPDATE veiculos SET modelo=?,placa=?,ano=?,cor=? WHERE id=?").bind(modelo,placa||null,ano,cor||null,id).run();await audit(e,(current as any).id,"veiculo_atualizado","veiculos");return json({status:"updated"},200,h)
+   }catch(error){console.error("vehicle_update_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível atualizar o veículo."},500,h)}
+  }
+  if(r.method==="POST"&&/^\/api\/veiculos\/[^/]+\/excluir$/.test(u.pathname)){
+   try{const id=u.pathname.split("/")[3]??"",vehicle=await e.DB.prepare("SELECT id FROM veiculos WHERE id=?").bind(id).first<any>();if(!vehicle)return json({error:"Veículo não encontrado ou já excluído."},404,h);
+    const linked=await e.DB.prepare("SELECT COUNT(*) total FROM atendimentos WHERE veiculo_id=?").bind(id).first<any>();if(Number(linked?.total??0)>0)return json({error:"Este veículo possui atendimentos no histórico. Para preservar os registros, não é possível excluí-lo."},409,h);
+    await e.DB.prepare("DELETE FROM veiculos WHERE id=?").bind(id).run();await audit(e,(current as any).id,"veiculo_excluido","veiculos");return json({status:"deleted",id},200,h)
+   }catch(error){console.error("vehicle_delete_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível excluir o veículo."},500,h)}
+  }
  }
  if(r.method==="POST"&&u.pathname==="/api/veiculos"){
   try{const b=await body(r),clienteId=String(b.cliente_id??""),modelo=String(b.modelo??"").trim(),placa=String(b.placa??"").trim().toUpperCase(),cor=String(b.cor??"").trim(),ano=b.ano==null||b.ano===""?null:Number(b.ano);
