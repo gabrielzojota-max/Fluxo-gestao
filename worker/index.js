@@ -149,8 +149,17 @@ export default { async fetch(r, e) {
         }
         if (r.method === "GET" && u.pathname === "/api/clientes") {
             const q = (u.searchParams.get("q") ?? "").trim();
-            const rows = await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.endereco,c.complemento,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos FROM clientes c WHERE (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q, q, q).all();
+            const rows = await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.endereco,c.complemento,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos FROM clientes c WHERE c.ativo=1 AND (?='' OR c.nome LIKE '%'||?||'%' OR COALESCE(c.telefone,'') LIKE '%'||?||'%') ORDER BY c.nome LIMIT 200").bind(q, q, q).all();
             return json({ clientes: rows.results ?? [] }, 200, h);
+        }
+        if (r.method === "POST" && /^\/api\/clientes\/[^/]+\/arquivar$/.test(u.pathname)) {
+            const id = u.pathname.split("/")[3] ?? "";
+            const client = await e.DB.prepare("SELECT id FROM clientes WHERE id=? AND ativo=1").bind(id).first();
+            if (!client)
+                return json({ error: "Cliente não encontrado ou já arquivado." }, 404, h);
+            await e.DB.prepare("UPDATE clientes SET ativo=0,arquivado_em=datetime('now','-3 hours') WHERE id=? AND ativo=1").bind(id).run();
+            await audit(e, current.id, "cliente_arquivado", "clientes");
+            return json({ ok: true, id, arquivado: true }, 200, h);
         }
         if (r.method === "POST" && u.pathname === "/api/clientes") {
             try {
@@ -169,7 +178,7 @@ export default { async fetch(r, e) {
         }
         if (r.method === "GET" && /^\/api\/clientes\/[^/]+$/.test(u.pathname)) {
             const id = u.pathname.split("/").pop() ?? "";
-            const client = await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.endereco,c.complemento,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos,(SELECT MAX(a.data_hora) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') ultima_visita FROM clientes c WHERE c.id=?").bind(id).first();
+            const client = await e.DB.prepare("SELECT c.id,c.nome,c.telefone,c.email,c.endereco,c.complemento,c.observacoes,c.criado_em,(SELECT COUNT(*) FROM veiculos v WHERE v.cliente_id=c.id) veiculos,(SELECT COUNT(*) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') atendimentos,(SELECT COALESCE(SUM(p.valor_centavos),0) FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id WHERE a.cliente_id=c.id AND p.status='recebido') gasto_centavos,(SELECT MAX(a.data_hora) FROM atendimentos a WHERE a.cliente_id=c.id AND a.status<>'cancelado') ultima_visita FROM clientes c WHERE c.id=? AND c.ativo=1").bind(id).first();
             if (!client)
                 return json({ error: "Cliente não encontrado." }, 404, h);
             const [vehicles, history] = await Promise.all([
