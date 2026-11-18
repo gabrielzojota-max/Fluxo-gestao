@@ -62,6 +62,19 @@ export default {async fetch(r:Request,e:Env):Promise<Response>{
    return json({usuario:{id,nome,email,papel:"socio",status:"ativo"}},201,h);
   }catch(error){console.error("user_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível criar o acesso do sócio."},500,h)}
  }
+ if(r.method==="GET"&&u.pathname==="/api/configuracoes"){
+  const row=await e.DB.prepare("SELECT nome_fantasia,razao_social,telefone,whatsapp,endereco,numero,complemento,bairro,cidade,cep,instagram,facebook,tiktok,logo_url FROM configuracoes_empresa WHERE id='principal'").first<any>();
+  return json({configuracoes:row??{nome_fantasia:"",razao_social:"",telefone:"",whatsapp:"",endereco:"",numero:"",complemento:"",bairro:"",cidade:"",cep:"",instagram:"",facebook:"",tiktok:"",logo_url:""}},200,h)
+ }
+ if(r.method==="PUT"&&u.pathname==="/api/configuracoes"){
+  if((current as any)?.papel!=="socio")return json({error:"Apenas sócios podem alterar os dados da empresa."},403,h);
+  try{const b=await body(r),fields=["nome_fantasia","razao_social","telefone","whatsapp","endereco","numero","complemento","bairro","cidade","cep","instagram","facebook","tiktok","logo_url"],limits=[120,160,40,40,180,20,100,100,100,12,180,180,180,500];
+   const values=fields.map((key,i)=>String(b[key]??"").trim());if(values.some((value,i)=>value.length>limits[i]))return json({error:"Um ou mais campos ultrapassaram o limite permitido."},400,h);
+   if(values[13]&&!/^https:\/\//i.test(values[13]))return json({error:"O logotipo precisa usar um link HTTPS público."},400,h);
+   await e.DB.prepare("INSERT INTO configuracoes_empresa(id,nome_fantasia,razao_social,telefone,whatsapp,endereco,numero,complemento,bairro,cidade,cep,instagram,facebook,tiktok,logo_url,atualizado_por,atualizado_em) VALUES('principal',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','-3 hours')) ON CONFLICT(id) DO UPDATE SET nome_fantasia=excluded.nome_fantasia,razao_social=excluded.razao_social,telefone=excluded.telefone,whatsapp=excluded.whatsapp,endereco=excluded.endereco,numero=excluded.numero,complemento=excluded.complemento,bairro=excluded.bairro,cidade=excluded.cidade,cep=excluded.cep,instagram=excluded.instagram,facebook=excluded.facebook,tiktok=excluded.tiktok,logo_url=excluded.logo_url,atualizado_por=excluded.atualizado_por,atualizado_em=excluded.atualizado_em").bind(...values,(current as any).id).run();
+   await audit(e,(current as any).id,"configuracoes_empresa_atualizadas","configuracoes_empresa");return json({configuracoes:Object.fromEntries(fields.map((key,i)=>[key,values[i]]))},200,h)
+  }catch(error){console.error("company_settings_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível salvar os dados da empresa."},500,h)}
+ }
  if(r.method==="GET"&&u.pathname==="/api/dashboard"){
    const [clients,appointments,today,revenue,monthExpenses,weekRevenue,weekExpenses,prevWeekRevenue,prevWeekExpenses,openAppointments,services]=await Promise.all([
     e.DB.prepare("SELECT COUNT(*) total FROM clientes").first<any>(),
