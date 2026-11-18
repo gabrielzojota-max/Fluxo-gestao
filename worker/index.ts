@@ -321,7 +321,7 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
    await e.DB.batch(statements);await audit(e,(current as any).id,"atendimento_criado","atendimentos");return json({id,servicos:items.length,valor_centavos:total},201,h)
   }catch(error){console.error("atendimento_create_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível criar o atendimento."},500,h)}
  }
- if(r.method==="POST"&&/^\\/api\\/atendimentos\\/[^/]+\\/excluir$/.test(u.pathname)){
+ if(r.method==="POST"&&/^\/api\/atendimentos\/[^/]+\/excluir$/.test(u.pathname)){
   try{const id=u.pathname.split("/")[3]??"",appointment=await e.DB.prepare("SELECT id,status FROM atendimentos WHERE id=?").bind(id).first<any>();if(!appointment)return json({error:"Atendimento não encontrado."},404,h);
    if(appointment.status==="em_andamento")return json({error:"Finalize ou cancele o atendimento antes de excluí-lo."},409,h);
    const [payments,stock,files]=await Promise.all([
