@@ -2708,3 +2708,88 @@ td,th{border-color:rgba(177,220,145,.1)}
  .dashboard-panels .list-head button{font-size:9px;padding:7px}
  .appointment-tools .appointment-filters button{font-size:9px;padding:8px 10px}
 }
+
+
+/* FLUXO · clientes e veículos com prioridade mobile */
+@media(max-width:700px){
+ .module-grid{display:flex!important;flex-direction:column;gap:12px!important}
+ .module-grid>.form-card{order:1}
+ .module-grid>.list-card{order:2}
+ .module-grid>.vehicle-card{order:3}
+ .module-grid .form-card,.module-grid .list-card{min-width:0;padding:14px 12px;border-radius:14px}
+ .module-grid .form-card h2,.module-grid .list-card h2{display:flex;align-items:center;gap:8px;font-size:14px;margin:0 0 13px}
+ .module-grid .data-form{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+ .module-grid .data-form label{margin:3px 0 0;font-size:10px;letter-spacing:.65px}
+ .module-grid .data-form input,.module-grid .data-form select,.module-grid .data-form textarea{width:100%;min-height:45px;padding:11px 12px;font-size:14px}
+ .module-grid .data-form .primary{width:100%;min-height:48px;margin-top:5px}
+ .module-grid .list-head{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:stretch}
+ .module-grid .list-head h2{margin:0 0 4px}
+ .module-grid .list-head p{font-size:10px;line-height:1.4}
+ .module-grid .list-head .search-field{width:100%;min-height:44px;display:flex;align-items:center;gap:8px;padding:0 11px;border:1px solid rgba(177,220,145,.17);border-radius:10px;background:rgba(5,12,7,.42)}
+ .module-grid .list-head .search-field input{width:100%;min-width:0;min-height:42px;padding:8px 0;border:0;background:transparent;font-size:13px;outline:none}
+ .module-grid .rows{display:grid;gap:8px;margin-top:11px}
+ .module-grid .data-row.client-row{display:flex;align-items:center;justify-content:space-between;gap:9px;min-width:0;padding:12px 10px;border:1px solid rgba(177,220,145,.13);border-radius:11px;background:rgba(7,13,9,.42);text-align:left}
+ .module-grid .client-row>div{min-width:0;display:grid;gap:5px}
+ .module-grid .client-row b{font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+ .module-grid .client-row small{font-size:9px;line-height:1.4;overflow-wrap:anywhere}
+ .module-grid .client-open{flex:none;display:flex;align-items:center;gap:3px;color:#c7ed9b;font-size:9px;font-weight:700}
+ .vehicle-card .vehicle-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .vehicle-card .vehicle-fields>div{min-width:0}
+ .vehicle-card .vehicle-fields>div:first-child{grid-column:1/-1}
+ .vehicle-card .vehicle-list{margin-top:17px;padding-top:13px;border-top:1px solid rgba(177,220,145,.13)}
+ .vehicle-card .vehicle-list h3{font-size:12px;margin:0 0 9px}
+ .vehicle-card .vehicle-list .data-row{padding:9px;border:1px solid rgba(177,220,145,.12);border-radius:10px;background:rgba(7,13,9,.38)}
+ .vehicle-open-list{display:flex;align-items:center;gap:10px;width:100%;min-width:0;text-align:left}
+ .vehicle-open-list>span:last-child{min-width:0;display:grid;gap:4px}
+ .vehicle-open-list b{font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+ .vehicle-open-list small{font-size:9px;line-height:1.4;overflow-wrap:anywhere}
+ .vehicle-thumb,.vehicle-icon{width:46px;height:46px;flex:none;border-radius:9px}
+ .photo-preview{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+ .photo-preview img{width:88px;height:70px;object-fit:cover;border-radius:9px}
+ .client-profile{display:grid;gap:11px;min-width:0}
+ .profile-top{display:grid;gap:9px}
+ .profile-top .back-button{justify-self:start;min-height:40px}
+ .profile-header-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+ .profile-header-actions .profile-since{font-size:9px}
+ .profile-header-actions .danger-action{min-height:38px;padding:8px 10px;font-size:10px}
+ .profile-hero{display:grid;grid-template-columns:46px minmax(0,1fr);gap:10px;padding:14px 12px;border:1px solid rgba(177,220,145,.15);border-radius:14px;background:radial-gradient(ellipse at 100% 0%,rgba(181,232,121,.1),transparent 48%),linear-gradient(145deg,#18251b,#101811)}
+ .profile-avatar{width:44px;height:44px;font-size:18px}
+ .profile-main{min-width:0}
+ .profile-main label{font-size:8px}
+ .profile-main h2{font-size:17px;line-height:1.25;overflow-wrap:anywhere}
+ .profile-main p{font-size:10px;line-height:1.5;overflow-wrap:anywhere}
+ .profile-spend{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid rgba(177,220,145,.13)}
+ .profile-spend small{font-size:8px}
+ .profile-spend strong{font-size:16px}
+ .profile-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .profile-stats article{min-width:0;padding:11px 10px;border-radius:11px}
+ .profile-stats article small{font-size:9px;line-height:1.35}
+ .profile-stats article strong{display:block;margin-top:6px;font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+ .profile-columns{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+ .profile-panel{min-width:0;padding:13px 11px;border-radius:13px}
+ .profile-panel .panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+ .profile-panel .panel-title h3{font-size:12px}
+ .vehicle-profile{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;padding:10px 0;border-top:1px solid rgba(177,220,145,.1)}
+ .vehicle-profile:first-of-type{border-top:0}
+ .vehicle-profile .vehicle-open{min-width:0;display:flex;align-items:center;gap:9px;text-align:left}
+ .vehicle-profile .vehicle-open>span:last-child{min-width:0;display:grid;gap:4px}
+ .vehicle-profile .vehicle-open b{font-size:11px;overflow-wrap:anywhere}
+ .vehicle-profile .vehicle-open small{font-size:9px;line-height:1.4;overflow-wrap:anywhere}
+ .vehicle-profile .photo-upload{justify-self:start;min-height:35px;padding:8px 10px;font-size:9px}
+ .history-row{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;padding:11px 0;border-top:1px solid rgba(177,220,145,.1)}
+ .history-row>div:first-child{min-width:0;display:grid;gap:5px}
+ .history-row b{font-size:11px;overflow-wrap:anywhere}
+ .history-row small{font-size:9px;line-height:1.4}
+ .history-row .history-value{display:flex;align-items:center;justify-content:space-between;gap:8px}
+ .history-row .history-value strong{font-size:12px}
+ .history-row .inline-action{justify-self:start;min-height:35px;padding:6px 9px;font-size:9px}
+}
+@media(max-width:380px){
+ .module-grid .data-row.client-row{padding:10px 8px}
+ .module-grid .client-row b{font-size:11px}
+ .profile-hero{grid-template-columns:40px minmax(0,1fr);padding:12px 10px}
+ .profile-avatar{width:40px;height:40px}
+ .profile-main h2{font-size:15px}
+ .profile-stats article{padding:9px}
+ .profile-stats article strong{font-size:12px}
+}
