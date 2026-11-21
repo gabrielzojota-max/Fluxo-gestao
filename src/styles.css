@@ -3313,3 +3313,13 @@ td,th{border-color:rgba(177,220,145,.1)}
 .finance-overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:900px){.finance-overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){section:has(.dashboard-finance-overview){width:100%;max-width:100%;min-width:0;overflow-x:clip}.dashboard-finance-overview{padding:15px 13px;margin-left:0;margin-right:0}.finance-overview-dates{grid-template-columns:minmax(0,1fr)}.finance-overview-cards{grid-template-columns:minmax(0,1fr)}.finance-overview-cards>div{width:100%;min-width:0}}
+
+/* FLUXO · Identificação visual dos aportes pessoais */
+section:has(.finance-page) .finance-summary .finance-investment-card{
+  border-color:#527b48;
+  background:linear-gradient(145deg,#1b2d1d 0%,#142019 100%);
+}
+section:has(.finance-page) .finance-summary .finance-investment-card>div svg,
+section:has(.finance-page) .finance-summary .finance-investment-card>strong{
+  color:#b9e889;
+}
