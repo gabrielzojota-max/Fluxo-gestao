@@ -272,7 +272,7 @@ export default { async fetch(r, e) {
             try {
                 const b = await body(r), categoria = String(b.categoria ?? "outros"), descricao = String(b.descricao ?? "").trim(), valor = Math.round(Number(b.valor_reais ?? 0) * 100), vencimento = b.vencimento ? String(b.vencimento) : null;
                 const origemRecurso = String(b.origem_recurso ?? "empresa");
-                if (!["empresa", "pessoal"].includes(origemRecurso) || !["produtos", "aluguel", "agua", "energia", "internet", "manutencao", "outros"].includes(categoria) || descricao.length < 2 || descricao.length > 160 || !Number.isSafeInteger(valor) || valor <= 0 || valor > 100000000 || (vencimento && !/^\d{4}-\d{2}-\d{2}$/.test(vencimento)))
+                if (!["empresa", "beto", "gabriel"].includes(origemRecurso) || !["produtos", "aluguel", "agua", "energia", "internet", "manutencao", "outros"].includes(categoria) || descricao.length < 2 || descricao.length > 160 || !Number.isSafeInteger(valor) || valor <= 0 || valor > 100000000 || (vencimento && !/^\d{4}-\d{2}-\d{2}$/.test(vencimento)))
                     return json({ error: "Confira categoria, descrição, valor e vencimento." }, 400, h);
                 const id = crypto.randomUUID();
                 await e.DB.prepare("INSERT INTO despesas(id,descricao,valor_centavos,vencimento,status,categoria,origem_recurso,criado_por) VALUES(?,?,?,?,'pendente',?,?,?)").bind(id, descricao, valor, vencimento, categoria, origemRecurso, current.id).run();
