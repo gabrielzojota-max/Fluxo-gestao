@@ -289,8 +289,8 @@ export default { async fetch(r, e) {
                 const id = u.pathname.split("/").pop() ?? "", b = await body(r);
                 if (b.origem_recurso !== undefined) {
                     const origemRecurso = String(b.origem_recurso);
-                    if (!["empresa", "pessoal"].includes(origemRecurso))
-                        return json({ error: "Selecione dinheiro pessoal ou da FLUXO." }, 400, h);
+                    if (!["empresa", "beto", "gabriel"].includes(origemRecurso))
+                        return json({ error: "Selecione dinheiro da FLUXO, Beto ou Gabriel." }, 400, h);
                     const result = await e.DB.prepare("UPDATE despesas SET origem_recurso=? WHERE id=? AND status<>'cancelada'").bind(origemRecurso, id).run();
                     if (!result.meta.changes)
                         return json({ error: "Despesa não encontrada." }, 404, h);
