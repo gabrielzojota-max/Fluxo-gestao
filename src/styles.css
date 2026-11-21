@@ -3207,3 +3207,5 @@ td,th{border-color:rgba(177,220,145,.1)}
 @media(max-width:680px){.dashboard-finance-overview{padding:15px;border-radius:16px}.finance-overview-heading h2{font-size:18px}.finance-overview-cards{grid-template-columns:1fr}.finance-overview-cards>div{padding:13px}.finance-overview-cards strong{font-size:23px}.finance-overview-dates{display:grid;grid-template-columns:1fr 1fr}.finance-overview-dates label{flex-direction:column;align-items:stretch;gap:5px}.finance-overview-dates input{width:100%;min-width:0;box-sizing:border-box}}
 
 .expense-source-help{display:block;margin-top:-7px;color:var(--muted,#6b7280);font-size:12px;line-height:1.4}
+
+.expense-source-inline{display:flex;align-items:center;gap:7px;margin-top:7px;font-size:12px;color:var(--muted,#6b7280)}.expense-source-inline select{max-width:210px;border:1px solid var(--border,#e5e7eb);border-radius:8px;padding:5px 7px;background:transparent;color:inherit;font-size:12px}
