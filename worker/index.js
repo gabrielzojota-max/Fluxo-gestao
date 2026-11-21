@@ -264,17 +264,18 @@ export default { async fetch(r, e) {
             }
         }
         if (r.method === "GET" && u.pathname === "/api/despesas") {
-            const rows = await e.DB.prepare("SELECT id,categoria,descricao,valor_centavos,vencimento,status,metodo,pago_em,criado_em FROM despesas WHERE status<>'cancelada' ORDER BY CASE status WHEN 'pendente' THEN 0 ELSE 1 END,COALESCE(vencimento,criado_em) DESC LIMIT 300").all();
+            const rows = await e.DB.prepare("SELECT id,categoria,descricao,valor_centavos,vencimento,status,metodo,pago_em,criado_em,origem_recurso FROM despesas WHERE status<>'cancelada' ORDER BY CASE status WHEN 'pendente' THEN 0 ELSE 1 END,COALESCE(vencimento,criado_em) DESC LIMIT 300").all();
             const totals = await e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN status='paga' THEN valor_centavos ELSE 0 END),0) pagas_centavos,COALESCE(SUM(CASE WHEN status='pendente' THEN valor_centavos ELSE 0 END),0) pendentes_centavos FROM despesas").first();
             return json({ despesas: rows.results ?? [], totais: totals }, 200, h);
         }
         if (r.method === "POST" && u.pathname === "/api/despesas") {
             try {
                 const b = await body(r), categoria = String(b.categoria ?? "outros"), descricao = String(b.descricao ?? "").trim(), valor = Math.round(Number(b.valor_reais ?? 0) * 100), vencimento = b.vencimento ? String(b.vencimento) : null;
-                if (!["produtos", "aluguel", "agua", "energia", "internet", "manutencao", "outros"].includes(categoria) || descricao.length < 2 || descricao.length > 160 || !Number.isSafeInteger(valor) || valor <= 0 || valor > 100000000 || (vencimento && !/^\d{4}-\d{2}-\d{2}$/.test(vencimento)))
+                const origemRecurso = String(b.origem_recurso ?? "empresa");
+                if (!["empresa", "pessoal"].includes(origemRecurso) || !["produtos", "aluguel", "agua", "energia", "internet", "manutencao", "outros"].includes(categoria) || descricao.length < 2 || descricao.length > 160 || !Number.isSafeInteger(valor) || valor <= 0 || valor > 100000000 || (vencimento && !/^\d{4}-\d{2}-\d{2}$/.test(vencimento)))
                     return json({ error: "Confira categoria, descrição, valor e vencimento." }, 400, h);
                 const id = crypto.randomUUID();
-                await e.DB.prepare("INSERT INTO despesas(id,descricao,valor_centavos,vencimento,status,categoria,criado_por) VALUES(?,?,?,?,'pendente',?,?)").bind(id, descricao, valor, vencimento, categoria, current.id).run();
+                await e.DB.prepare("INSERT INTO despesas(id,descricao,valor_centavos,vencimento,status,categoria,origem_recurso,criado_por) VALUES(?,?,?,?,'pendente',?,?,?)").bind(id, descricao, valor, vencimento, categoria, origemRecurso, current.id).run();
                 await audit(e, current.id, "despesa_criada", "despesas");
                 return json({ id, status: "pendente" }, 201, h);
             }
