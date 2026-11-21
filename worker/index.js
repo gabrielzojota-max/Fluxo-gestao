@@ -297,9 +297,9 @@ export default { async fetch(r, e) {
                     await audit(e, current.id, "despesa_origem_recurso_atualizada", "despesas");
                     return json({ status: "atualizada", origem_recurso: origemRecurso }, 200, h);
                 }
-                const metodo = String(b.metodo ?? "pix");
-                if (b.status !== "paga" || !["pix", "dinheiro", "cartao", "outro"].includes(metodo))
-                    return json({ error: "Informe uma forma válida para dar baixa na despesa." }, 400, h);
+                const metodo = String(b.metodo ?? "pix").trim().toLowerCase();
+                if (!["pix", "dinheiro", "cartao", "outro"].includes(metodo))
+                    return json({ error: "Forma de pagamento inválida. Escolha Pix, Dinheiro, Cartão ou Outro." }, 400, h);
                 const expense = await e.DB.prepare("SELECT id,descricao,valor_centavos,status,origem_recurso FROM despesas WHERE id=?").bind(id).first();
                 if (!expense)
                     return json({ error: "Despesa não encontrada." }, 404, h);
