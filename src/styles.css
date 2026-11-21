@@ -3310,6 +3310,6 @@ td,th{border-color:rgba(177,220,145,.1)}
 .finance-overview-dates{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}
 .finance-overview-dates label{width:100%;overflow:hidden}
 .finance-overview-dates input{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box}
-.finance-overview-cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+.finance-overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:900px){.finance-overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){section:has(.dashboard-finance-overview){width:100%;max-width:100%;min-width:0;overflow-x:clip}.dashboard-finance-overview{padding:15px 13px;margin-left:0;margin-right:0}.finance-overview-dates{grid-template-columns:minmax(0,1fr)}.finance-overview-cards{grid-template-columns:minmax(0,1fr)}.finance-overview-cards>div{width:100%;min-width:0}}
