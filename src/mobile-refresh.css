@@ -1,143 +1,176 @@
-/* FLUXO Gestão · experiência mobile aprovada */
+
+
+/* FLUXO Gestão · acabamento das telas internas no mobile */
 @media (max-width: 700px) {
-  html, body, #root { min-height: 100%; }
-  body { background: #080d0a; }
-  .shell { min-height: 100dvh; }
-  main { min-height: 100dvh; padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
-  main > header {
-    position: sticky; top: 0; z-index: 40;
-    height: 66px; padding: 0 15px; gap: 10px;
-    display: flex; align-items: center;
-    background: rgba(8, 13, 10, .96);
-    border-bottom: 1px solid #25372a;
-    box-shadow: 0 8px 24px #0005;
+  main > section { box-sizing: border-box; overflow-x: clip; }
+  main > section > .heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  .page-error,.page-success { margin: 0 0 12px; padding: 12px 13px; border-radius: 12px; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+  .module-grid { display: flex; flex-direction: column; gap: 12px; }
+  .module-grid > article,.finance-page > article,.stock-page > article,.reports-page > article,
+  .appointments-page > article,.client-profile > article,.profile-panel,
+  .list-card,.form-card {
+    box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%;
+    border-radius: 16px; padding: 14px;
   }
-  main > header::before {
-    content: "FLUXO";
-    display: block; margin-right: auto;
-    color: #f3f8f1; font: 800 21px Manrope, sans-serif;
-    letter-spacing: 3px; line-height: 1;
-    text-shadow: 0 0 22px #a8dc7030;
+  .form-card h2,.list-head h2,.panel-title h3 { font-size: 15px; line-height: 1.35; }
+  .form-card h2 { display:flex; align-items:center; gap:8px; margin:0 0 14px; }
+  .list-head { display:flex; flex-direction:column; align-items:stretch; gap:10px; margin-bottom:12px; }
+  .list-head > div { min-width:0; width:100%; }
+  .list-head p { font-size:10px; line-height:1.45; }
+  .list-head .search-field { width:100%; box-sizing:border-box; }
+  .search-field input,.stock-tools input { width:100%; min-width:0; box-sizing:border-box; }
+  .data-form { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+  .data-form label { margin:4px 0 0; font-size:11px; font-weight:700; color:#b9c8b8; }
+  .data-form input,.data-form select,.data-form textarea,
+  .search-field input,.stock-tools input,
+  .report-period input,.report-toolbar input {
+    box-sizing:border-box; width:100%; min-width:0; min-height:44px;
+    border-radius:11px; padding:10px 12px; font-size:16px;
   }
-  main > header::after {
-    content: "GESTÃO";
-    position: absolute; left: 17px; top: 43px;
-    color: #a8dc70; font: 700 7px "DM Sans", sans-serif;
-    letter-spacing: 3.7px;
+  .data-form textarea { min-height:86px; }
+  .data-form button.primary,.form-card button.primary,.form-actions button,
+  .data-form > button { width:100%; min-height:46px; justify-content:center; margin-top:7px; }
+  .form-actions { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+  .vehicle-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .vehicle-fields > div { min-width:0; }
+  .rows { min-width:0; }
+  .data-row { box-sizing:border-box; width:100%; gap:9px; padding:12px 2px; }
+  .data-row b { font-size:12px; line-height:1.4; overflow-wrap:anywhere; }
+  .data-row small { font-size:10px; line-height:1.45; }
+  .client-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .client-row > div { flex:1; min-width:0; }
+  .client-open { flex:0 0 auto; font-size:10px; white-space:nowrap; }
+  .vehicle-card { order:2; }
+  .module-grid > .list-card { order:1; }
+  .module-grid > .form-card:not(.vehicle-card) { order:0; }
+  .client-profile { display:flex; flex-direction:column; gap:12px; }
+  .profile-top { display:flex; flex-direction:column; align-items:stretch; gap:9px; }
+  .profile-header-actions { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  .profile-header-actions .danger-action { min-height:38px; }
+  .profile-hero { display:grid; grid-template-columns:48px minmax(0,1fr); gap:10px; padding:14px; border-radius:15px; }
+  .profile-avatar { width:46px; height:46px; }
+  .profile-main { min-width:0; }
+  .profile-main h2 { font-size:17px; overflow-wrap:anywhere; }
+  .profile-main p { font-size:10px; line-height:1.45; overflow-wrap:anywhere; }
+  .profile-spend { grid-column:1/-1; padding-top:10px; border-top:1px solid #314033; }
+  .profile-spend strong { font-size:20px; }
+  .profile-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .profile-stats article { min-width:0; padding:12px; border-radius:12px; }
+  .profile-stats small { font-size:9px; }
+  .profile-stats strong { display:block; margin-top:6px; font-size:15px; overflow-wrap:anywhere; }
+  .profile-columns { display:flex; flex-direction:column; gap:11px; }
+  .profile-panel { padding:13px; }
+  .vehicle-profile { display:flex; flex-wrap:wrap; gap:8px; padding:10px 0; }
+  .vehicle-open { flex:1 1 100%; min-width:0; }
+  .vehicle-profile .photo-upload { flex:1 1 100%; }
+  .history-row { display:flex; flex-direction:column; align-items:stretch; gap:7px; padding:11px 0; }
+  .history-row > div:first-child { min-width:0; }
+  .history-value { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .appointments-page,.finance-page,.stock-page,.reports-page { display:flex; flex-direction:column; min-width:0; }
+  .appointment-tools { display:flex; flex-direction:column; align-items:stretch; gap:10px; }
+  .appointment-tools > div { min-width:0; width:100%; }
+  .appointment-tools h2 { font-size:15px; }
+  .appointment-tools p { font-size:10px; line-height:1.45; }
+  .appointment-tools .primary,.appointment-tools button { min-height:42px; }
+  .appointment-filters,.stock-filter-tabs,.report-presets {
+    display:flex; gap:6px; max-width:100%; overflow-x:auto; padding:2px 0 7px;
+    scrollbar-width:thin; -webkit-overflow-scrolling:touch;
   }
-  main > header .hamb, main > header > small { display: none !important; }
-  main > header .icon-button { margin-left: 0; width: 34px; height: 34px; }
-  main > header > svg { width: 18px; height: 18px; }
-  main > header .user-chip { max-width: 76px; padding: 7px 9px; font-size: 9px; }
-  main > header .logout { padding: 5px; }
-  main > section {
-    width: 100%; max-width: none;
-    padding: 18px 13px calc(24px + env(safe-area-inset-bottom));
+  .appointment-filters button,.stock-filter-tabs button,.report-presets button {
+    flex:0 0 auto; min-height:38px; padding:8px 11px; border-radius:10px; font-size:10px; white-space:nowrap;
   }
-  .heading { border: 0; padding: 0 2px 13px; margin-bottom: 13px; }
-  .heading > div > label { font-size: 8px; letter-spacing: 1.7px; }
-  .heading h1 { font-size: 25px; letter-spacing: -.8px; }
-  .heading p { font-size: 11px; }
-  .dashboard-page { display: flex; flex-direction: column; gap: 12px; }
-  .dashboard-page > .welcome-panel { order: 1; padding: 17px 16px; border-radius: 17px; }
-  .dashboard-page > .dashboard-stats { order: 2; }
-  .dashboard-page > .dashboard-finance-overview { order: 3; }
-  .dashboard-page > .dashboard-week-panel { order: 4; }
-  .dashboard-page > .dashboard-panels { order: 5; }
-  .welcome-panel {
-    min-height: 112px; border-radius: 17px;
-    background: linear-gradient(125deg,#14271a 0%,#111b14 65%,#101711 100%);
+  .appointment-row { grid-template-columns:56px minmax(0,1fr); gap:9px; padding:11px 0; }
+  .appointment-time { width:56px; min-height:60px; border-radius:11px; }
+  .appointment-open { min-width:0; text-align:left; }
+  .appointment-open b { font-size:11px; line-height:1.4; }
+  .appointment-open small { font-size:9px; line-height:1.4; overflow-wrap:anywhere; }
+  .appointment-row .row-actions { grid-column:2; display:flex; flex-wrap:wrap; gap:6px; }
+  .appointment-row .row-actions button { min-height:34px; font-size:10px; }
+  .appointment-row .status { font-size:9px; }
+  .finance-page .list-head { align-items:stretch; }
+  .finance-page .list-head .secondary-action,.stock-page .list-head .secondary-action { width:100%; justify-content:center; min-height:40px; }
+  .finance-page .data-form { gap:9px; }
+  .finance-page .data-form .form-actions { display:grid; }
+  .cash-day-tools,.cash-controls,.cash-summary,.cash-actions { min-width:0; max-width:100%; }
+  .cash-summary,.finance-summary,.finance-totals,.cash-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .cash-summary > *, .finance-summary > *, .finance-totals > *, .cash-metrics > * {
+    box-sizing:border-box; min-width:0; padding:11px; border-radius:12px;
   }
-  .welcome-panel h2 { margin: 7px 0 5px; font-size: 19px; letter-spacing: -.5px; }
-  .welcome-panel p { max-width: 245px; font-size: 11px; line-height: 1.45; }
-  .welcome-panel .welcome-kicker { font-size: 7px; letter-spacing: 1.4px; }
-  .welcome-panel .welcome-meta { margin-top: 12px; }
-  .welcome-panel .welcome-meta strong { font-size: 10px; }
-  .dashboard-stats { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
-  .dashboard-stats article {
-    min-width: 0; min-height: 126px; padding: 13px 12px;
-    border-radius: 15px; display: flex; flex-direction: column;
-    justify-content: space-between;
+  .cash-summary strong,.finance-summary strong,.finance-totals strong,.cash-metrics strong {
+    display:block; font-size:15px; overflow-wrap:anywhere;
   }
-  .dashboard-stats .metric-top { display: flex; align-items: center; gap: 6px; }
-  .dashboard-stats .metric-top span { font-size: 10px; line-height: 1.3; }
-  .dashboard-stats .metric-top i { width: 27px; height: 27px; flex: none; }
-  .dashboard-stats .metric-top svg { width: 16px; height: 16px; }
-  .dashboard-stats article > strong { margin: 10px 0 4px; font-size: clamp(18px,5.2vw,23px); letter-spacing: -.8px; overflow-wrap: anywhere; }
-  .dashboard-stats article > small { font-size: 9px; line-height: 1.35; }
-  .dashboard-finance-overview {
-    padding: 15px 13px; border-radius: 16px;
-    background: linear-gradient(145deg,#151f18,#101712);
-    border: 1px solid #2c3d30;
-  }
-  .finance-overview-heading h2 { font-size: 15px; }
-  .finance-overview-heading p { font-size: 10px; line-height: 1.4; }
-  .finance-overview-controls { display: grid; gap: 9px; }
-  .finance-overview-presets { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; }
-  .finance-overview-presets button { min-width: 0; padding: 7px 3px; font-size: 9px; }
-  .finance-overview-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-  .finance-overview-dates label { min-width: 0; font-size: 9px; }
-  .finance-overview-dates input { width: 100%; min-width: 0; padding: 8px 5px; font-size: 10px; }
-  .finance-overview-cards { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
-  .finance-overview-cards > div {
-    min-width: 0; padding: 11px 10px; border: 1px solid #2b3c30;
-    border-radius: 12px; background: #111a14;
-  }
-  .finance-overview-cards > div small { display: block; font-size: 9px; line-height: 1.3; }
-  .finance-overview-cards > div strong { display: block; margin: 7px 0 4px; font-size: clamp(14px,4vw,18px); overflow-wrap: anywhere; }
-  .finance-overview-cards > div span { display: block; color: #8fa092; font-size: 8px; line-height: 1.35; }
-  .finance-overview-footnote { font-size: 9px; line-height: 1.45; }
-  .dashboard-week-panel { padding: 14px 13px; border-radius: 15px; }
-  .dashboard-week-heading h2 { font-size: 15px; }
-  .dashboard-week-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
-  .dashboard-week-grid > div { padding: 11px 0; border-top: 1px solid #293b2d; }
-  .dashboard-week-grid strong { font-size: 18px; }
-  .dashboard-panels { display: grid; grid-template-columns: 1fr; }
-  .dashboard-panels > article { padding: 14px; border-radius: 15px; }
-  .dashboard-panels .list-head { align-items: flex-start; }
-  .dashboard-panels .list-head .secondary-action { width: auto; min-height: 34px; padding: 7px 9px; }
-  .mobile-nav {
-    position: fixed; inset: auto 0 0; z-index: 60;
-    display: grid; grid-template-columns: repeat(5,minmax(0,1fr));
-    min-height: 70px; padding: 7px 7px calc(7px + env(safe-area-inset-bottom));
-    border-top: 1px solid #2b3d30;
-    background: rgba(8,14,10,.97); backdrop-filter: blur(22px);
-    box-shadow: 0 -12px 35px #0008;
-  }
-  .mobile-nav button {
-    min-width: 0; min-height: 49px; padding: 5px 2px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 4px; border: 1px solid transparent; border-radius: 12px;
-    background: transparent; color: #89988d; font-size: 9px; font-weight: 600;
-  }
-  .mobile-nav button svg { width: 19px; height: 19px; }
-  .mobile-nav button.active {
-    color: #c9ef96; border-color: #365239;
-    background: linear-gradient(145deg,#1b3020,#111d15);
-  }
-  .mobile-nav button.active svg { color: #a8dc70; }
-  .nav-backdrop { z-index: 50; }
-  .side { z-index: 55; width: min(82vw,300px); }
-  .client-records-scroll,.vehicle-records-scroll {
-    max-height: 320px; overflow-y: auto; overscroll-behavior: contain;
-    scrollbar-width: thin; scrollbar-color: #577347 #111a14;
-  }
-  .client-records-scroll .data-row,.vehicle-records-scroll .data-row { min-height: 65px; }
-  .appointments-page,.finance-page,.stock-page,.reports-page { gap: 11px; }
-  .appointments-page > article,.finance-page > article,.stock-page > article,
-  .reports-page > article { border-radius: 15px; }
-  .module-grid { gap: 11px; }
-  .form-card,.list-card { border-radius: 15px; }
-  .data-form input,.data-form select,.data-form textarea { font-size: 16px; }
-  .data-row { min-width: 0; }
-  .data-row > div:first-child { min-width: 0; }
-  .data-row small { overflow-wrap: anywhere; }
-  .modal-backdrop { align-items: flex-end; padding: 0; }
-  .detail-modal {
-    width: 100%; max-width: none; max-height: 90dvh;
-    overflow-y: auto; border-radius: 20px 20px 0 0;
-    padding: 18px 15px calc(20px + env(safe-area-inset-bottom));
-  }
-  .modal-actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
-  .modal-actions button { width: 100%; justify-content: center; }
+  .cash-summary small,.finance-summary small,.finance-totals small,.cash-metrics small { font-size:9px; line-height:1.4; }
+  .cash-day-tools { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+  .cash-day-tools input,.cash-day-tools select { width:100%; min-width:0; min-height:44px; box-sizing:border-box; }
+  .cash-actions { display:grid; grid-template-columns:1fr; gap:8px; }
+  .cash-actions button { width:100%; min-height:43px; justify-content:center; }
+  .expense-source-inline { align-items:stretch; flex-direction:column; gap:5px; }
+  .expense-source-inline select { width:100%; max-width:none; min-height:42px; font-size:14px; }
+  .cash-late-adjustments { padding:11px; }
+  .stock-tools { display:flex; flex-direction:column; gap:9px; }
+  .stock-tools > input { width:100%; }
+  .stock-history-head .stock-filter-tabs { width:100%; }
+  .stock-row,.stock-movement { align-items:flex-start; }
+  .stock-balance { flex:0 0 auto; max-width:42%; text-align:right; }
+  .stock-balance strong { display:block; font-size:12px; overflow-wrap:anywhere; }
+  .stock-status { display:inline-block; margin-top:5px; font-size:9px; }
+  .report-toolbar { display:flex; flex-direction:column; align-items:stretch; gap:10px; }
+  .report-toolbar > div { min-width:0; }
+  .report-toolbar h2 { font-size:19px; }
+  .report-toolbar p { font-size:11px; line-height:1.45; }
+  .report-export { width:100%; min-height:44px; justify-content:center; }
+  .report-period { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; padding:12px; border-radius:14px; }
+  .report-period .report-presets { grid-column:1/-1; grid-row:1; }
+  .report-period label { display:grid; gap:5px; min-width:0; font-size:10px; }
+  .report-period input { width:100%; min-width:0; min-height:42px; }
+  .report-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .report-cards article { min-width:0; padding:12px 10px; border-radius:13px; }
+  .report-cards article small { font-size:9px; line-height:1.35; }
+  .report-cards article strong { display:block; margin:7px 0 5px; font-size:clamp(15px,4.5vw,20px); overflow-wrap:anywhere; }
+  .report-cards article span { font-size:9px; line-height:1.4; }
+  .comparison-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .comparison-grid > div { min-width:0; padding:11px; border-radius:12px; }
+  .comparison-grid b { display:block; font-size:14px; overflow-wrap:anywhere; }
+  .comparison-grid small,.comparison-grid span { font-size:9px; line-height:1.4; }
+  .report-columns { display:flex; flex-direction:column; gap:11px; }
+  .report-bars { overflow:hidden; }
+  .report-bar-row { grid-template-columns:38px minmax(0,1fr) auto; gap:6px; }
+  .report-bar-row > small { font-size:9px; }
+  .report-footnote { font-size:9px; line-height:1.5; padding:0 2px; }
+  .company-settings-page .list-card { padding:13px; }
+  .company-settings-form { display:flex; flex-direction:column; gap:10px; }
+  .company-settings-form .settings-group { padding:12px; border-radius:13px; }
+  .company-settings-form .settings-group input { min-height:43px; }
+  .company-settings-form .form-actions { display:block; }
+  .company-settings-form .form-actions button { width:100%; }
+  .notice { display:flex; align-items:flex-start; gap:10px; padding:14px; border-radius:14px; }
+  .empty { padding:24px 12px; text-align:center; }
+  .empty b { font-size:13px; }
+  .empty small { font-size:10px; line-height:1.5; }
+  .status { max-width:100%; white-space:normal; text-align:center; }
+  .detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .detail-grid > div { min-width:0; padding:11px; border-radius:11px; }
+  .detail-grid small { font-size:9px; }
+  .detail-grid b { font-size:11px; overflow-wrap:anywhere; }
+  .appointment-service-breakdown { padding:12px; border-radius:13px; }
+  .appointment-payment-review { display:flex; flex-direction:column; gap:10px; }
+  .appointment-payment-review button { width:100%; min-height:43px; justify-content:center; }
+  .vehicle-detail-photo { max-height:210px; width:100%; object-fit:cover; border-radius:13px; }
+  .vehicle-history-row { width:100%; min-width:0; gap:8px; }
+  .modal-heading h2 { font-size:18px; overflow-wrap:anywhere; }
+  .cancel-appointment-panel textarea { width:100%; box-sizing:border-box; font-size:16px; }
+  .modal-actions { padding-top:12px; border-top:1px solid #293b2d; }
+  .modal-actions button { min-height:43px; }
+  .mobile-nav { padding-left:5px; padding-right:5px; }
+  .mobile-nav button { font-size:9px; }
+}
+@media (max-width: 390px) {
+  main > section { padding-left:10px; padding-right:10px; }
+  .report-cards { grid-template-columns:minmax(0,1fr); }
+  .profile-stats { gap:6px; }
+  .mobile-nav button { font-size:8px; }
+  .mobile-nav button svg { width:18px; height:18px; }
+}
+@media (min-width: 701px) {
+  .mobile-nav { display:none !important; }
 }
