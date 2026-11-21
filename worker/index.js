@@ -308,7 +308,7 @@ export default { async fetch(r, e) {
                 const movementId = crypto.randomUUID();
                 await e.DB.batch([
                     e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?,'saida','despesa',?,?,?, ?,? WHERE EXISTS(SELECT 1 FROM despesas WHERE id=? AND status='pendente' AND origem_recurso='empresa')").bind(movementId, id, expense.descricao, Number(expense.valor_centavos), metodo, current.id, id),
-                    e.DB.prepare("UPDATE despesas SET status='paga',metodo=?,pago_em=datetime('now','-3 hours') WHERE id=? AND status='pendente' AND (origem_recurso='pessoal' OR EXISTS(SELECT 1 FROM movimentacoes WHERE id=?))").bind(metodo, id, movementId)
+                    e.DB.prepare("UPDATE despesas SET status='paga',metodo=?,pago_em=datetime('now','-3 hours') WHERE id=? AND status='pendente' AND (origem_recurso IN ('pessoal','beto','gabriel') OR EXISTS(SELECT 1 FROM movimentacoes WHERE id=?))").bind(metodo, id, movementId)
                 ]);
                 const updated = await e.DB.prepare("SELECT status FROM despesas WHERE id=?").bind(id).first();
                 if (updated?.status !== "paga")
