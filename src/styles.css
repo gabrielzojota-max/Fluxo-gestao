@@ -3301,3 +3301,5 @@ td,th{border-color:rgba(177,220,145,.1)}
 .cash-late-adjustments>span{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:8px;border-top:1px solid rgba(164,211,115,.12);font-size:12px;color:var(--muted,#aab9a8)}
 .cash-late-adjustments>span strong{flex:0 0 auto;color:#a9e477;font-size:13px}
 #finance-open{scroll-margin-top:18px}
+
+.expense-source-inline{display:flex;align-items:center;gap:7px;margin-top:7px;font-size:12px;color:var(--muted,#6b7280)}.expense-source-inline select{max-width:210px;border:1px solid var(--border,#e5e7eb);border-radius:8px;padding:5px 7px;background:transparent;color:inherit;font-size:12px}
