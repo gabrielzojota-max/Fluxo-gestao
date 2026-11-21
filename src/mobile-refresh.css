@@ -242,3 +242,30 @@
  .dashboard-stats .metric-card>strong{font-size:21px}
  .dashboard-stats .metric-top span{font-size:9px}
 }
+
+
+/* FLUXO · Consistência visual entre os módulos */
+:where(.form-card,.list-card,.profile-panel,.profile-stats article,.report-cards article,.settings-group){border-radius:16px}
+:where(.data-form input,.data-form select,.data-form textarea,.search-field input,.stock-tools input){transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+:where(.data-form input,.data-form select,.data-form textarea,.search-field input,.stock-tools input):focus{outline:none;border-color:#9acb69!important;box-shadow:0 0 0 3px rgba(154,203,105,.14)}
+:where(button.primary,button.secondary-action,button.cancel-action,button.danger-action){transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}
+:where(button.primary,button.secondary-action,button.cancel-action,button.danger-action):not(:disabled):active{transform:translateY(1px)}
+:where(.data-row,.history-row,.vehicle-history-row){transition:background .16s ease,border-color .16s ease}
+:where(.data-row:hover,.history-row:hover,.vehicle-history-row:hover){background:rgba(169,222,112,.045)}
+:where(.form-card,.list-card){box-shadow:0 8px 24px rgba(0,0,0,.11)}
+:where(.empty){border:1px dashed rgba(169,222,112,.2);border-radius:13px}
+:where(.page-error,.page-success){border-radius:12px;line-height:1.5}
+:where(.status){border-radius:999px}
+@media(min-width:701px){
+ .appointments-page:has(.appointment-form){display:flex;flex-direction:column}
+ .appointments-page>.appointment-form{order:-1}
+}
+@media(max-width:700px){
+ .appointments-page:has(.appointment-form){display:flex;flex-direction:column;gap:12px}
+ .appointments-page>.appointment-form{order:-1}
+ .appointments-page>.appointment-form .list-head{align-items:flex-start}
+ .appointments-page>.appointment-form .list-head>div{min-width:0}
+ .appointments-page>.appointment-form .list-head h2{font-size:15px}
+ .appointments-page>.appointment-form .data-form{gap:10px}
+ .appointments-page>.appointment-form .schedule-submit{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom));z-index:2;box-shadow:0 5px 20px rgba(0,0,0,.35)}
+}
