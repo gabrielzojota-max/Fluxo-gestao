@@ -265,7 +265,7 @@ export default { async fetch(r, e) {
         }
         if (r.method === "GET" && u.pathname === "/api/despesas") {
             const rows = await e.DB.prepare("SELECT id,categoria,descricao,valor_centavos,vencimento,status,metodo,pago_em,criado_em,origem_recurso FROM despesas WHERE status<>'cancelada' ORDER BY CASE status WHEN 'pendente' THEN 0 ELSE 1 END,COALESCE(vencimento,criado_em) DESC LIMIT 300").all();
-            const totals = await e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN status='paga' THEN valor_centavos ELSE 0 END),0) pagas_centavos,COALESCE(SUM(CASE WHEN status='pendente' THEN valor_centavos ELSE 0 END),0) pendentes_centavos FROM despesas").first();
+            const totals = await e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN status='paga' AND COALESCE(origem_recurso,'empresa')='empresa' THEN valor_centavos ELSE 0 END),0) pagas_centavos,COALESCE(SUM(CASE WHEN status='pendente' AND COALESCE(origem_recurso,'empresa')='empresa' THEN valor_centavos ELSE 0 END),0) pendentes_centavos,COALESCE(SUM(CASE WHEN status='paga' AND origem_recurso IN ('beto','gabriel','pessoal') THEN valor_centavos ELSE 0 END),0) investimentos_socios_centavos FROM despesas").first();
             return json({ despesas: rows.results ?? [], totais: totals }, 200, h);
         }
         if (r.method === "POST" && u.pathname === "/api/despesas") {
@@ -289,7 +289,7 @@ export default { async fetch(r, e) {
                 const id = u.pathname.split("/").pop() ?? "", b = await body(r);
                 if (b.origem_recurso !== undefined) {
                     const origemRecurso = String(b.origem_recurso);
-                    if (!["empresa", "beto", "gabriel"].includes(origemRecurso))
+                    if (!["empresa", "beto", "gabriel", "pessoal"].includes(origemRecurso))
                         return json({ error: "Selecione dinheiro da FLUXO, Beto ou Gabriel." }, 400, h);
                     const result = await e.DB.prepare("UPDATE despesas SET origem_recurso=? WHERE id=? AND status<>'cancelada'").bind(origemRecurso, id).run();
                     if (!result.meta.changes)
