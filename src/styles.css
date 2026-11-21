@@ -3292,3 +3292,12 @@ td,th{border-color:rgba(177,220,145,.1)}
   .finance-overview-cards span{font-size:11px}
   .finance-overview-footnote{font-size:10px;margin-top:12px}
 }
+
+
+.cash-late-payment-link{margin-top:10px;align-self:flex-start;min-height:40px}
+.cash-late-adjustments{display:grid;gap:8px;margin-top:13px;padding:14px;border:1px solid rgba(164,211,115,.28);border-radius:12px;background:rgba(135,184,81,.07)}
+.cash-late-adjustments>b{color:var(--text,#edf5e9);font-size:13px}
+.cash-late-adjustments>small{color:var(--muted,#9eae9d);line-height:1.45}
+.cash-late-adjustments>span{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:8px;border-top:1px solid rgba(164,211,115,.12);font-size:12px;color:var(--muted,#aab9a8)}
+.cash-late-adjustments>span strong{flex:0 0 auto;color:#a9e477;font-size:13px}
+#finance-open{scroll-margin-top:18px}

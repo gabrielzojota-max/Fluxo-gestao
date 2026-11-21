@@ -242,10 +242,11 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
    await e.DB.prepare("CREATE TABLE IF NOT EXISTS fechamentos_caixa(dia TEXT PRIMARY KEY,total_entradas_centavos INTEGER NOT NULL,total_saidas_centavos INTEGER NOT NULL,saldo_centavos INTEGER NOT NULL,resumo_json TEXT NOT NULL,observacoes TEXT,fechado_por TEXT NOT NULL,fechado_em TEXT NOT NULL DEFAULT(datetime('now','-3 hours')))").run();
    const payload=r.method==="POST"?await body(r):{};const dia=r.method==="GET"?(u.searchParams.get("dia")??""):String(payload.dia??"");
    if(!/^\d{4}-\d{2}-\d{2}$/.test(dia)||Number.isNaN(Date.parse(dia+"T00:00:00Z")))return json({error:"Informe uma data válida."},400,h);
-   const [mov,byMethod,closed]=await Promise.all([
+   const [mov,byMethod,closed,lateMovements]=await Promise.all([
     e.DB.prepare("SELECT COALESCE(SUM(CASE WHEN tipo='entrada' THEN valor_centavos ELSE 0 END),0) entradas_centavos,COALESCE(SUM(CASE WHEN tipo='saida' THEN valor_centavos ELSE 0 END),0) saidas_centavos,COUNT(*) quantidade FROM movimentacoes WHERE substr(ocorrido_em,1,10)=?").bind(dia).first<any>(),
     e.DB.prepare("SELECT tipo,COALESCE(metodo,'outro') metodo,SUM(valor_centavos) valor_centavos,COUNT(*) quantidade FROM movimentacoes WHERE substr(ocorrido_em,1,10)=? GROUP BY tipo,COALESCE(metodo,'outro') ORDER BY tipo,metodo").bind(dia).all<any>(),
-    e.DB.prepare("SELECT f.*,u.nome fechado_por_nome FROM fechamentos_caixa f LEFT JOIN usuarios u ON u.id=f.fechado_por WHERE f.dia=?").bind(dia).first<any>()
+    e.DB.prepare("SELECT f.*,u.nome fechado_por_nome FROM fechamentos_caixa f LEFT JOIN usuarios u ON u.id=f.fechado_por WHERE f.dia=?").bind(dia).first<any>(),
+    e.DB.prepare("SELECT id,tipo,descricao,valor_centavos,metodo,ocorrido_em FROM movimentacoes WHERE substr(ocorrido_em,1,10)=? AND origem IN('pagamento_pos_fechamento','taxa_cartao_pos_fechamento') ORDER BY ocorrido_em DESC").bind(dia).all<any>()
    ]);
    const entradas=Number(mov?.entradas_centavos??0),saidas=Number(mov?.saidas_centavos??0),methods=byMethod.results??[],dinheiroEsperado=methods.reduce((sum:number,m:any)=>sum+(m.metodo==="dinheiro"?(m.tipo==="entrada"?1:-1)*Number(m.valor_centavos||0):0),0),resumo={dia,entradas_centavos:entradas,saidas_centavos:saidas,saldo_centavos:entradas-saidas,dinheiro_esperado_centavos:dinheiroEsperado,quantidade:Number(mov?.quantidade??0),por_metodo:methods};
    if(r.method==="POST"){
@@ -261,7 +262,7 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
     const saved=await e.DB.prepare("SELECT f.*,u.nome fechado_por_nome FROM fechamentos_caixa f LEFT JOIN usuarios u ON u.id=f.fechado_por WHERE f.dia=?").bind(dia).first<any>();
     return json({resumo,fechamento:saved,fechado:true},201,h)
    }
-   return json({resumo,fechamento:closed??null},200,h)
+   return json({resumo,fechamento:closed??null,movimentacoes_pos_fechamento:lateMovements.results??[]},200,h)
   }catch(error){console.error("cash_closing_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível carregar ou fechar o caixa."},500,h)}
  }
  if(r.method==="GET"&&u.pathname==="/api/financeiro"){
@@ -285,15 +286,15 @@ if(u.pathname==="/api/caixa/fechamento"&&(r.method==="GET"||r.method==="POST")){
  if(r.method==="PATCH"&&/^\/api\/pagamentos\/[^/]+$/.test(u.pathname)){
   try{const id=u.pathname.split("/").pop()??"",payment=await e.DB.prepare("SELECT p.id,p.atendimento_id,p.valor_centavos,p.taxa_centavos,p.liquido_centavos,p.metodo,p.status,c.nome cliente FROM pagamentos p JOIN atendimentos a ON a.id=p.atendimento_id JOIN clientes c ON c.id=a.cliente_id WHERE p.id=?").bind(id).first<any>();
    if(!payment)return json({error:"Pagamento não encontrado."},404,h);if(payment.status!=="pendente")return json({error:"Este pagamento não está pendente."},409,h);
-   const movementId=crypto.randomUUID();
+   const movementId=crypto.randomUUID(),closing=await e.DB.prepare("SELECT dia FROM fechamentos_caixa WHERE dia=date('now','-3 hours')").first<any>(),late=!!closing,receiptOrigin=late?"pagamento_pos_fechamento":"pagamento",feeOrigin=late?"taxa_cartao_pos_fechamento":"taxa_cartao";
    await e.DB.batch([
-    e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?, 'entrada','pagamento',?,?,?, ?,? WHERE EXISTS(SELECT 1 FROM pagamentos WHERE id=? AND status='pendente')").bind(movementId,id,"Recebimento líquido · "+payment.cliente,Number(payment.liquido_centavos??payment.valor_centavos),payment.metodo,(current as any).id,id),
-    e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?,'saida','taxa_cartao',?,?,?,'cartao',? WHERE EXISTS(SELECT 1 FROM pagamentos WHERE id=? AND status='pendente' AND taxa_centavos>0)").bind(crypto.randomUUID(),id,"Taxa do cartão · "+payment.cliente,Number(payment.taxa_centavos??0),(current as any).id,id),
+    e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?, 'entrada',?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM pagamentos WHERE id=? AND status='pendente')").bind(movementId,receiptOrigin,id,"Recebimento líquido · "+payment.cliente,Number(payment.liquido_centavos??payment.valor_centavos),payment.metodo,(current as any).id,id),
+    e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?,'saida',?,?,?,?,'cartao',? WHERE EXISTS(SELECT 1 FROM pagamentos WHERE id=? AND status='pendente' AND taxa_centavos>0)").bind(crypto.randomUUID(),feeOrigin,id,"Taxa do cartão · "+payment.cliente,Number(payment.taxa_centavos??0),(current as any).id,id),
     e.DB.prepare("UPDATE pagamentos SET status='recebido',recebido_em=datetime('now','-3 hours'),movimento_id=? WHERE id=? AND status='pendente' AND EXISTS(SELECT 1 FROM movimentacoes WHERE id=?)").bind(movementId,id,movementId)
    ]);
    const confirmed=await e.DB.prepare("SELECT status,recebido_em,movimento_id FROM pagamentos WHERE id=?").bind(id).first<any>();
    if(confirmed?.status!=="recebido")return json({error:"Não foi possível confirmar este pagamento."},409,h);
-   await audit(e,(current as any).id,"pagamento_confirmado","pagamentos");return json({status:confirmed.status,recebido_em:confirmed.recebido_em},200,h)
+   await audit(e,(current as any).id,"pagamento_confirmado","pagamentos");return json({status:confirmed.status,recebido_em:confirmed.recebido_em,pos_fechamento:late},200,h)
   }catch(error){console.error("payment_confirm_error",{message:error instanceof Error?error.message:"unknown"});return json({error:"Não foi possível confirmar o pagamento. Verifique se ele já foi confirmado."},409,h)}
  }
   if(r.method==="GET"&&u.pathname==="/api/veiculos"){
