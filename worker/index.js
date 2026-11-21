@@ -286,18 +286,29 @@ export default { async fetch(r, e) {
         }
         if (r.method === "PATCH" && u.pathname.startsWith("/api/despesas/")) {
             try {
-                const id = u.pathname.split("/").pop() ?? "", b = await body(r), metodo = String(b.metodo ?? "pix");
+                const id = u.pathname.split("/").pop() ?? "", b = await body(r);
+                if (b.origem_recurso !== undefined) {
+                    const origemRecurso = String(b.origem_recurso);
+                    if (!["empresa", "pessoal"].includes(origemRecurso))
+                        return json({ error: "Selecione dinheiro pessoal ou da FLUXO." }, 400, h);
+                    const result = await e.DB.prepare("UPDATE despesas SET origem_recurso=? WHERE id=? AND status<>'cancelada'").bind(origemRecurso, id).run();
+                    if (!result.meta.changes)
+                        return json({ error: "Despesa não encontrada." }, 404, h);
+                    await audit(e, current.id, "despesa_origem_recurso_atualizada", "despesas");
+                    return json({ status: "atualizada", origem_recurso: origemRecurso }, 200, h);
+                }
+                const metodo = String(b.metodo ?? "pix");
                 if (b.status !== "paga" || !["pix", "dinheiro", "cartao", "outro"].includes(metodo))
                     return json({ error: "Informe uma forma válida para dar baixa na despesa." }, 400, h);
-                const expense = await e.DB.prepare("SELECT id,descricao,valor_centavos,status FROM despesas WHERE id=?").bind(id).first();
+                const expense = await e.DB.prepare("SELECT id,descricao,valor_centavos,status,origem_recurso FROM despesas WHERE id=?").bind(id).first();
                 if (!expense)
                     return json({ error: "Despesa não encontrada." }, 404, h);
                 if (expense.status !== "pendente")
                     return json({ error: "Esta despesa não está pendente." }, 409, h);
                 const movementId = crypto.randomUUID();
                 await e.DB.batch([
-                    e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?,'saida','despesa',?,?,?, ?,? WHERE EXISTS(SELECT 1 FROM despesas WHERE id=? AND status='pendente')").bind(movementId, id, expense.descricao, Number(expense.valor_centavos), metodo, current.id, id),
-                    e.DB.prepare("UPDATE despesas SET status='paga',metodo=?,pago_em=datetime('now','-3 hours') WHERE id=? AND status='pendente' AND EXISTS(SELECT 1 FROM movimentacoes WHERE id=?)").bind(metodo, id, movementId)
+                    e.DB.prepare("INSERT INTO movimentacoes(id,tipo,origem,origem_id,descricao,valor_centavos,metodo,criado_por) SELECT ?,'saida','despesa',?,?,?, ?,? WHERE EXISTS(SELECT 1 FROM despesas WHERE id=? AND status='pendente' AND origem_recurso='empresa')").bind(movementId, id, expense.descricao, Number(expense.valor_centavos), metodo, current.id, id),
+                    e.DB.prepare("UPDATE despesas SET status='paga',metodo=?,pago_em=datetime('now','-3 hours') WHERE id=? AND status='pendente' AND (origem_recurso='pessoal' OR EXISTS(SELECT 1 FROM movimentacoes WHERE id=?))").bind(metodo, id, movementId)
                 ]);
                 const updated = await e.DB.prepare("SELECT status FROM despesas WHERE id=?").bind(id).first();
                 if (updated?.status !== "paga")
