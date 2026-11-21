@@ -3303,3 +3303,13 @@ td,th{border-color:rgba(177,220,145,.1)}
 #finance-open{scroll-margin-top:18px}
 
 .expense-source-inline{display:flex;align-items:center;gap:7px;margin-top:7px;font-size:12px;color:var(--muted,#6b7280)}.expense-source-inline select{max-width:210px;border:1px solid var(--border,#e5e7eb);border-radius:8px;padding:5px 7px;background:transparent;color:inherit;font-size:12px}
+
+/* FLUXO · Corrige largura do resumo financeiro no celular */
+.dashboard-finance-overview,.finance-overview-controls,.finance-overview-dates,.finance-overview-dates label,.finance-overview-cards,.finance-overview-cards>div{box-sizing:border-box;min-width:0;max-width:100%}
+.dashboard-finance-overview{width:100%;overflow:hidden}
+.finance-overview-dates{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}
+.finance-overview-dates label{width:100%;overflow:hidden}
+.finance-overview-dates input{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+.finance-overview-cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.finance-overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){section:has(.dashboard-finance-overview){width:100%;max-width:100%;min-width:0;overflow-x:clip}.dashboard-finance-overview{padding:15px 13px;margin-left:0;margin-right:0}.finance-overview-dates{grid-template-columns:minmax(0,1fr)}.finance-overview-cards{grid-template-columns:minmax(0,1fr)}.finance-overview-cards>div{width:100%;min-width:0}}
