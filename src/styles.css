@@ -3323,3 +3323,46 @@ section:has(.finance-page) .finance-summary .finance-investment-card>div svg,
 section:has(.finance-page) .finance-summary .finance-investment-card>strong{
   color:#b9e889;
 }
+
+/* FLUXO UI refresh — premium, compact, mobile-first */
+:root{--flux-accent:#9ed46a;--flux-accent-2:#c4ed91;--flux-bg:#090e0b;--flux-surface:#101813;--flux-surface-2:#151f18;--flux-border:#26352a;--flux-muted:#829188}
+body{background:radial-gradient(ellipse at 80% -10%,#1b2b1d 0,transparent 36%),#090e0b;color:#e8f0e9}
+.side{background:rgba(13,19,15,.97);border-color:#253329;box-shadow:8px 0 30px #0002}
+.brand{padding-bottom:27px}.brand-symbol{background:linear-gradient(135deg,#c3ef8c,#78a74c);box-shadow:0 0 24px #a5d36b20}
+.side nav button{border-radius:11px;transition:background .18s,color .18s,transform .18s}.side nav button:hover{transform:translateX(2px)}.side nav button.selected{background:linear-gradient(90deg,#203122,#18231a);box-shadow:inset 3px 0 var(--flux-accent);color:#d3f5aa}
+header{background:#0e1510;border-color:var(--flux-border);backdrop-filter:blur(14px)}
+main>section{padding:clamp(20px,3vw,40px)}
+.heading{margin-bottom:22px}.heading h1{letter-spacing:-.04em}.heading p{max-width:650px;line-height:1.55;color:#8f9e93}
+.stats article,.panels article,.form-card,.list-card,.finance-page>article,.stock-page>article,.reports-page>article,.appointments-page>article,.profile-panel,.dashboard-finance-overview{background:linear-gradient(155deg,#141d17,#101713);border:1px solid #29372d;border-radius:17px;box-shadow:0 12px 32px #00000016}
+.stats article,.panels article,.form-card,.list-card{transition:border-color .2s,transform .2s}.stats article:hover,.form-card:hover,.list-card:hover{border-color:#405544}
+.stats article strong{letter-spacing:-.04em}.stats article div{gap:8px;align-items:center}
+.primary{background:linear-gradient(135deg,#b9e982,#8ebd5d);box-shadow:0 5px 18px #91c35a20;border-radius:11px;transition:filter .15s,transform .15s}.primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+button:not(.primary):not(.danger-action):not(.cancel-action):not(.logout):not(.reveal){transition:background .15s,border-color .15s,color .15s}
+input,select,textarea{background-color:#0b120e!important;color:#e9f1ea!important;border-color:#2b3b30!important;border-radius:11px!important}
+input:focus,select:focus,textarea:focus{outline:none!important;border-color:#92c95f!important;box-shadow:0 0 0 3px #9ed46a18!important}
+.data-form label,.form-card label{color:#a9b8ad}
+.data-row,.appointment-row,.client-row,.vehicle-profile,.history-row{border-color:#26352b}
+.status{border-radius:999px}
+.notice{border-radius:15px;background:linear-gradient(145deg,#17251a,#121a15);border-color:#344b35}
+.page-error,.page-success{border-radius:13px}
+.finance-overview-cards>div{background:linear-gradient(155deg,#19241a,#121a15);border:1px solid #2b3b30}
+.finance-overview-cards>div:nth-child(3){border-color:#36563b}
+.finance-overview-cards .overview-positive strong{color:#b9e982}.finance-overview-cards .overview-negative strong{color:#ff9a90}
+.modal-backdrop,.modal-overlay{backdrop-filter:blur(6px)}
+.modal,.modal-card{background:#121a15!important;border:1px solid #304033!important;border-radius:20px!important;box-shadow:0 30px 90px #0008}
+.mobile-nav{background:rgba(12,18,14,.96);border-top:1px solid #29372d;backdrop-filter:blur(18px)}
+.mobile-nav button.active{color:#b9e982}
+@media(max-width:700px){
+ body{background:#0a100c}
+ main>section{padding:20px 14px 92px}
+ .heading{gap:10px;margin-bottom:17px}
+ .heading h1{font-size:24px;letter-spacing:-.05em}
+ .heading p{font-size:11px;line-height:1.5}
+ .stats{gap:8px}.stats article{border-radius:14px;background:linear-gradient(150deg,#151e17,#101713);border:1px solid #29382d;box-shadow:0 8px 22px #0002}
+ .stats article strong{margin:12px 0 5px;font-size:20px}
+ .panels{gap:10px;margin-top:12px}.panels article{border-radius:15px}
+ .form-card,.list-card,.finance-page>article,.stock-page>article,.reports-page>article,.appointments-page>article{border-radius:15px}
+ .primary{border-radius:12px;min-height:42px}
+ .finance-overview-cards>div{border-radius:13px}
+ .mobile-nav{padding-bottom:env(safe-area-inset-bottom);min-height:64px}
+}
